@@ -1,13 +1,10 @@
-use crate::view::{
-  handler::MouseState,
-  renderer::{Component, Renderer, ViewResult},
-};
-use sdl2::{pixels::Color, rect::Rect};
+use crate::view::{handler::MouseState, Component};
+use rich_sdl2_rust::{color::Rgba, geo::Rect, renderer::pen::Pen};
 
 #[derive(PartialEq)]
 pub struct ButtonProps {
-  pub border_color: Color,
-  pub color_on_hover: Color,
+  pub border_color: Rgba,
+  pub color_on_hover: Rgba,
   pub mouse: MouseState,
 }
 
@@ -46,7 +43,7 @@ impl<H: FnMut()> Component for Button<H> {
     }
   }
 
-  fn render(&self, canvas: &mut Renderer<'_, '_>) -> ViewResult {
+  fn render(&self, pen: &Pen<'_>) {
     let &Button { props, bounds, .. } = &self;
     let &ButtonProps {
       color_on_hover,
@@ -57,12 +54,11 @@ impl<H: FnMut()> Component for Button<H> {
     let on_hover = bounds.contains_point(mouse.mouse_pos);
 
     if on_hover {
-      canvas.set_draw_color(*color_on_hover);
-      canvas.fill_rect(*bounds)?;
+      pen.set_color(color_on_hover);
+      pen.fill_rect(bounds);
     }
 
-    canvas.set_draw_color(*border_color);
-    canvas.draw_rect(*bounds)?;
-    Ok(())
+    pen.set_color(border_color);
+    pen.stroke_rect(bounds);
   }
 }
