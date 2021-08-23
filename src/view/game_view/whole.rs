@@ -32,8 +32,8 @@ pub struct WholeProps<'font> {
 pub struct Whole<'font> {
   keyboard: Keyboard<'font>,
   finder: Finder<'font>,
-  header: Header,
-  stats: Stats,
+  header: Header<'font>,
+  stats: Stats<'font>,
   client: Rect,
 }
 

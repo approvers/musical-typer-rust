@@ -14,25 +14,25 @@ use crate::{model::exp::game_activity::GameScore, view::Component};
 mod rank;
 
 #[derive(PartialEq)]
-pub struct StatsProps {
-  pub font: Rc<Font>,
+pub struct StatsProps<'font> {
+  pub font: Rc<Font<'font>>,
   pub type_per_second: f64,
   pub score: GameScore,
 }
 
-pub struct Stats {
-  props: StatsProps,
+pub struct Stats<'font> {
+  props: StatsProps<'font>,
   client: Rect,
 }
 
-impl Stats {
-  pub fn new(props: StatsProps, client: Rect) -> Self {
+impl<'font> Stats<'font> {
+  pub fn new(props: StatsProps<'font>, client: Rect) -> Self {
     Self { props, client }
   }
 }
 
-impl Component for Stats {
-  type Props = StatsProps;
+impl<'font> Component for Stats<'font> {
+  type Props = StatsProps<'font>;
 
   fn is_needed_redraw(&self, new_props: &Self::Props) -> bool {
     &self.props != new_props
