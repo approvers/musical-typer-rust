@@ -503,9 +503,9 @@ dependencies = [
 
 [[package]]
 name = "rich-sdl2-rust"
-version = "0.5.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a17781724599baa5cdff98e935cd1623df5403a99977d1c5a4fe6d6c79a821fa"
+checksum = "dc2640634499f72de0c258a53858bc791dc64da5be8305caa2b1fcd792eea0bd"
 dependencies = [
  "ash",
  "bindgen",
