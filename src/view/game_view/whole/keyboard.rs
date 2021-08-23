@@ -1,28 +1,37 @@
-use crate::view::renderer::{
-  text::TextAlign, Component, Renderer, ViewResult,
+use rich_sdl2_rust::{
+  color::Rgb,
+  geo::{Point, Rect},
+  renderer::pen::Pen,
 };
-use sdl2::{
-  pixels::Color,
-  rect::{Point, Rect},
+use rich_sdl2_ttf_rust::font::{
+  pen::{
+    FontRenderExt, FontRenderOptions, TextAlign, TextAlignX,
+    TextAlignY,
+  },
+  Font,
 };
+use std::rc::Rc;
 
-const BLUE: Color = Color::RGB(64, 80, 180);
-const ORANGE: Color = Color::RGB(209, 154, 29);
-const GREEN: Color = Color::RGB(20, 76, 64);
-const BACK: Color = Color::RGB(253, 243, 226);
-const BLACK: Color = Color::RGB(0, 0, 0);
-const GRAY: Color = Color::RGB(195, 195, 190);
+use crate::view::Component;
+
+const BLUE: Rgb = 0x4050b4.into();
+const ORANGE: Rgb = 0xd19a1d.into();
+const GREEN: Rgb = 0x144c40.into();
+const BACK: Rgb = 0xfdf3e2.into();
+const BLACK: Rgb = 0.into();
+const GRAY: Rgb = 0xc3c3be.into();
 
 #[derive(PartialEq)]
-struct KeyCell {
+struct KeyCell<'font> {
+  font: Rc<Font<'font>>,
   key: char,
   is_highlighted: bool,
   is_pressed: bool,
   client: Rect,
 }
 
-impl KeyCell {
-  fn bg_color(&self) -> Color {
+impl KeyCell<'_> {
+  fn bg_color(&self) -> Rgb {
     if self.is_highlighted {
       GREEN
     } else {
@@ -30,7 +39,7 @@ impl KeyCell {
     }
   }
 
-  fn text_color(&self) -> Color {
+  fn text_color(&self) -> Rgb {
     if self.is_pressed {
       ORANGE
     } else if self.is_highlighted {
@@ -43,7 +52,7 @@ impl KeyCell {
   }
 }
 
-impl Component for KeyCell {
+impl Component for KeyCell<'_> {
   type Props = Self;
 
   fn update(&mut self, new_props: Self::Props) {
@@ -54,41 +63,47 @@ impl Component for KeyCell {
     self != new_props
   }
 
-  fn render(&self, canvas: &mut Renderer<'_, '_>) -> ViewResult {
+  fn render(&self, pen: &Pen<'_>) {
     let border_dim = Rect::from_center(
       self.client.center(),
       self.client.width() - 5,
       self.client.height() - 5,
     );
-    canvas.set_draw_color(self.bg_color());
-    canvas.fill_rect(border_dim)?;
-    canvas.set_draw_color(BLACK);
-    canvas.draw_rect(border_dim)?;
+    pen.set_color(self.bg_color());
+    pen.fill_rect(border_dim);
+    pen.set_color(BLACK);
+    pen.stroke_rect(border_dim);
 
-    canvas.text(|s| {
-      s.color(self.text_color())
-        .text(&self.key.to_string().to_uppercase())
-        .align(TextAlign::Center)
-        .line_height(self.client.height())
-        .pos(self.client.center())
-    })?;
-    Ok(())
+    pen.text(
+      self.font,
+      &self.key.to_string().to_uppercase(),
+      FontRenderOptions::new()
+        .align(TextAlign {
+          x: TextAlignX::Center,
+          y: TextAlignY::Center,
+        })
+        .pivot(self.client.center()),
+    );
   }
 }
 
 #[derive(PartialEq)]
-pub struct KeyboardProps {
+pub struct KeyboardProps<'font> {
+  pub font: Rc<Font<'font>>,
   pub pressed_keys: Vec<char>,
   pub highlighted_keys: Vec<char>,
 }
 
-pub struct Keyboard {
-  props: KeyboardProps,
-  cells: Vec<KeyCell>,
+pub struct Keyboard<'font> {
+  props: KeyboardProps<'font>,
+  cells: Vec<KeyCell<'font>>,
 }
 
-impl Keyboard {
-  pub fn new(initial_props: KeyboardProps, client: Rect) -> Self {
+impl<'font> Keyboard<'font> {
+  pub fn new(
+    initial_props: KeyboardProps<'font>,
+    client: Rect,
+  ) -> Self {
     const CELL_ASPECT: f64 = 1.0;
     const KEY_CHARS_ROWS: &[&str] = &[
       "1234567890-^¥",
@@ -109,17 +124,19 @@ impl Keyboard {
       let margin = client.width() as f64 - row_amount * cell_width;
       for (x, key_char) in key_chars_row.chars().enumerate() {
         let x = x as f64 + 1.0;
-        let center = Point::new(
-          (x * cell_width + client.x() as f64 + margin / 2.0) as i32,
-          (y * cell_height + client.y() as f64 + cell_height / 2.0)
+        let center = Point {
+          x: (x * cell_width + client.x() as f64 + margin / 2.0)
             as i32,
-        );
+          y: (y * cell_height + client.y() as f64 + cell_height / 2.0)
+            as i32,
+        };
         let key_cell_client = Rect::from_center(
           center,
           cell_width as u32,
           cell_height as u32,
         );
         cells.push(KeyCell {
+          font: Rc::clone(&initial_props.font),
           key: key_char,
           is_highlighted: initial_props
             .highlighted_keys
@@ -137,8 +154,8 @@ impl Keyboard {
   }
 }
 
-impl Component for Keyboard {
-  type Props = KeyboardProps;
+impl<'font> Component for Keyboard<'font> {
+  type Props = KeyboardProps<'font>;
 
   fn is_needed_redraw(&self, new_props: &Self::Props) -> bool {
     &self.props != new_props
@@ -148,9 +165,9 @@ impl Component for Keyboard {
     self.props = new_props;
   }
 
-  fn render(&self, ctx: &mut Renderer<'_, '_>) -> ViewResult {
+  fn render(&self, ctx: &Pen<'_>) {
     for cell in &self.cells {
-      cell.render(ctx)?;
+      cell.render(ctx);
     }
     Ok(())
   }

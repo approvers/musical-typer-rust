@@ -1,4 +1,4 @@
-use sdl2::{pixels::Color, rect::Rect};
+use std::rc::Rc;
 
 use crate::{
   model::exp::{
@@ -6,7 +6,7 @@ use crate::{
   },
   view::{
     components::{Header, HeaderProps, Stats, StatsProps},
-    renderer::{Component, Renderer, ViewResult},
+    Component,
   },
 };
 
@@ -15,9 +15,12 @@ mod keyboard;
 
 use finder::{Finder, FinderProps};
 use keyboard::{Keyboard, KeyboardProps};
+use rich_sdl2_rust::{color::Rgb, geo::Rect, renderer::pen::Pen};
+use rich_sdl2_ttf_rust::font::Font;
 
 #[derive(PartialEq)]
-pub struct WholeProps {
+pub struct WholeProps<'font> {
+  pub font: Rc<Font<'font>>,
   pub pressed_keys: Vec<char>,
   pub sentence: Sentence,
   pub music_info: MusicInfo,
@@ -26,16 +29,16 @@ pub struct WholeProps {
   pub section_remaining_ratio: f64,
 }
 
-pub struct Whole {
-  keyboard: Keyboard,
-  finder: Finder,
+pub struct Whole<'font> {
+  keyboard: Keyboard<'font>,
+  finder: Finder<'font>,
   header: Header,
   stats: Stats,
   client: Rect,
 }
 
-impl Whole {
-  pub fn new(props: WholeProps, client: Rect) -> Self {
+impl<'font> Whole<'font> {
+  pub fn new(props: WholeProps<'font>, client: Rect) -> Self {
     let hint = {
       let roman = props.sentence.roman();
       roman.will_input.chars().next().map_or(vec![], |c| vec![c])
@@ -45,6 +48,7 @@ impl Whole {
 
     let keyboard = Keyboard::new(
       KeyboardProps {
+        font: Rc::clone(&props.font),
         pressed_keys: props.pressed_keys.clone(),
         highlighted_keys: hint,
       },
@@ -54,6 +58,7 @@ impl Whole {
     let finder_dim = Rect::new(0, 100, client.width(), 150);
     let finder = Finder::new(
       FinderProps {
+        font: Rc::clone(&props.font),
         sentence: props.sentence.clone(),
         remaining_ratio: props.section_remaining_ratio,
       },
@@ -63,6 +68,7 @@ impl Whole {
     let header_dim = Rect::new(0, 0, client.width(), 100);
     let header = Header::new(
       HeaderProps {
+        font: Rc::clone(&props.font),
         music_info: props.music_info.clone(),
         score_point: props.score.score_point,
       },
@@ -73,6 +79,7 @@ impl Whole {
       Rect::new(0, client.height() as i32 - 150, client.width(), 150);
     let stats = Stats::new(
       StatsProps {
+        font: Rc::clone(&props.font),
         type_per_second: props.type_per_second,
         score: props.score,
       },
@@ -89,8 +96,8 @@ impl Whole {
   }
 }
 
-impl Component for Whole {
-  type Props = WholeProps;
+impl<'font> Component for Whole<'font> {
+  type Props = WholeProps<'font>;
 
   fn is_needed_redraw(&self, _: &Self::Props) -> bool {
     true
@@ -103,35 +110,42 @@ impl Component for Whole {
     };
 
     self.keyboard.update(KeyboardProps {
+      font: Rc::clone(&props.font),
       pressed_keys: props.pressed_keys.clone(),
       highlighted_keys: hint,
     });
 
     self.finder.update(FinderProps {
+      font: Rc::clone(&props.font),
       sentence: props.sentence.clone(),
       remaining_ratio: props.section_remaining_ratio,
     });
 
     self.stats.update(StatsProps {
+      font: Rc::clone(&props.font),
       type_per_second: props.type_per_second,
       score: props.score,
     });
   }
 
-  fn render(&self, ctx: &mut Renderer<'_, '_>) -> ViewResult {
+  fn render(&self, pen: &Pen<'_>) {
     let &Whole { client, .. } = &self;
 
-    ctx.set_draw_color(Color::RGB(253, 243, 226));
-    ctx.clear();
+    pen.set_color(Rgb {
+      r: 253,
+      g: 243,
+      b: 226,
+    });
+    pen.clear();
 
     {
       let header_dim = Rect::new(0, 0, client.width(), 100);
-      self.header.render(ctx)?;
-      ctx.set_draw_color(Color::RGB(0, 0, 0));
-      ctx.draw_rect(header_dim)?;
+      self.header.render(pen);
+      pen.set_color(0.into());
+      pen.stroke_rect(header_dim);
     }
 
-    self.finder.render(ctx)?;
+    self.finder.render(pen);
 
     {
       let keyboard_dim = Rect::new(
@@ -140,14 +154,12 @@ impl Component for Whole {
         client.width(),
         200,
       );
-      self.keyboard.render(ctx)?;
+      self.keyboard.render(pen);
 
-      ctx.set_draw_color(Color::RGB(0, 0, 0));
-      ctx.draw_rect(keyboard_dim)?;
+      pen.set_color(0.into());
+      pen.stroke_rect(keyboard_dim);
     }
 
-    self.stats.render(ctx)?;
-
-    Ok(())
+    self.stats.render(pen);
   }
 }
