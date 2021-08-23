@@ -69,7 +69,7 @@ impl<'music> Player<'music> {
 
   pub fn stop_bgm(&self, fade_time: u32) -> Result<(), PlayerError> {
     if let Some(ref music) = self.music {
-      music.fade_out(fade_time);
+      music.fade_out(fade_time).map_err(AudioError)?;
     }
     Ok(())
   }
@@ -78,7 +78,9 @@ impl<'music> Player<'music> {
     let chunk =
       self.chunks.get(name).expect("sound effect not loaded");
     if let Some(channel) = self.group.first_free() {
-      channel.play(chunk, Default::default());
+      channel
+        .play(chunk, Default::default())
+        .map_err(AudioError)?;
       Ok(())
     } else {
       Err(PlayerError::AudioError(SdlError::Others {

@@ -36,16 +36,16 @@ pub trait Component {
 
 #[derive(Debug)]
 pub enum ViewError {
-  ModelError(MusicalTyperError),
-  FontError(String),
-  PlayerError(PlayerError),
-  RenderError(String),
-  CacheError,
+  Model(MusicalTyperError),
+  Font(String),
+  Player(PlayerError),
+  Render(String),
+  Cache,
 }
 
 impl From<MusicalTyperError> for ViewError {
   fn from(err: MusicalTyperError) -> Self {
-    ViewError::ModelError(err)
+    ViewError::Model(err)
   }
 }
 
@@ -64,7 +64,7 @@ pub enum ViewRoute {
 
 impl From<PlayerError> for ViewError {
   fn from(err: PlayerError) -> Self {
-    ViewError::PlayerError(err)
+    ViewError::Player(err)
   }
 }
 
@@ -97,7 +97,7 @@ impl<'router> Router<'router> {
         GameScore::new(0, 0.0, 0.0),
         score.metadata.get_music_info(),
         Rc::clone(&self.font),
-        &self.video,
+        self.video,
       )));
     while let Some(boxed_view) = view.as_mut() {
       let next = boxed_view.run()?;
@@ -110,7 +110,7 @@ impl<'router> Router<'router> {
             score.clone(),
             Rc::clone(&self.font),
             &self.mix_device,
-            &self.video,
+            self.video,
           )?));
         }
         ViewRoute::ResultView(score, info) => {
@@ -120,7 +120,7 @@ impl<'router> Router<'router> {
             score,
             info,
             Rc::clone(&self.font),
-            &self.video,
+            self.video,
           )));
         }
         ViewRoute::Quit => {

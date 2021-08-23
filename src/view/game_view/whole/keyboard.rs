@@ -1,5 +1,5 @@
 use rich_sdl2_rust::{
-  color::Rgb,
+  color::{Rgb, Rgba},
   geo::{Point, Rect, Size},
   renderer::pen::Pen,
 };
@@ -8,7 +8,7 @@ use rich_sdl2_ttf_rust::font::{
     FontRenderExt, FontRenderOptions, TextAlign, TextAlignX,
     TextAlignY,
   },
-  Font,
+  Font, RenderMode,
 };
 use std::rc::Rc;
 
@@ -108,10 +108,19 @@ impl Component for KeyCell<'_> {
     pen.set_color(BLACK);
     pen.stroke_rect(border_dim);
 
+    let text_color = self.text_color();
     pen.text(
       &self.font,
       &self.key.to_string().to_uppercase(),
       FontRenderOptions::new()
+        .mode(RenderMode::Blended {
+          foreground: Rgba {
+            r: text_color.r,
+            g: text_color.b,
+            b: text_color.b,
+            a: 255,
+          },
+        })
         .align(TextAlign {
           x: TextAlignX::Center,
           y: TextAlignY::Center,
@@ -130,7 +139,6 @@ pub struct KeyboardProps {
 pub struct Keyboard<'font> {
   props: KeyboardProps,
   cells: Vec<KeyCell<'font>>,
-  font: Rc<Font<'font>>,
 }
 
 impl<'font> Keyboard<'font> {
@@ -188,7 +196,6 @@ impl<'font> Keyboard<'font> {
     Self {
       cells,
       props: initial_props,
-      font,
     }
   }
 }

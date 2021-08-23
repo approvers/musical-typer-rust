@@ -130,7 +130,7 @@ impl<'view> View for ResultView<'view> {
 
     let should_quit = Cell::new(false);
 
-    let mut event = EventBox::new(&self.video);
+    let mut event = EventBox::new(self.video);
 
     event.handle_quit(Box::new(|_| should_quit.set(true)));
     event.handle_keyboard(Box::new(|_| should_quit.set(true)));
@@ -142,7 +142,7 @@ impl<'view> View for ResultView<'view> {
       let time = Instant::now();
 
       {
-        let pen = Pen::new(&self.renderer);
+        let pen = Pen::new(self.renderer);
         pen.set_color(Rgb {
           r: 253,
           g: 243,

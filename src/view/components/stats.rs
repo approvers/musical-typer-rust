@@ -95,7 +95,7 @@ impl<'font> Component for Stats<'font> {
 
     font.set_font_size(20);
     pen.text(
-      &font,
+      font,
       &format!("{:04.2} Type/s", type_per_second),
       FontRenderOptions::new()
         .align(TextAlign {
@@ -106,7 +106,7 @@ impl<'font> Component for Stats<'font> {
     );
 
     pen.text(
-      &font,
+      font,
       "正解率",
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -121,7 +121,7 @@ impl<'font> Component for Stats<'font> {
     );
     font.set_font_size(client.size.height - 20);
     pen.text(
-      &font,
+      font,
       &format!("{:05.1}%", accuracy * 100.0),
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -153,7 +153,7 @@ impl<'font> Component for Stats<'font> {
 
     font.set_font_size(20);
     pen.text(
-      &font,
+      font,
       "達成率",
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -171,7 +171,7 @@ impl<'font> Component for Stats<'font> {
     );
     font.set_font_size(client.size.height - 20);
     pen.text(
-      &font,
+      font,
       &format!("{:05.1}%", achievement_rate * 100.0),
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -189,7 +189,7 @@ impl<'font> Component for Stats<'font> {
     );
 
     pen.text(
-      &font,
+      font,
       "ランク",
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -204,7 +204,7 @@ impl<'font> Component for Stats<'font> {
     );
     font.set_font_size(25);
     pen.text(
-      &font,
+      font,
       rank.0,
       FontRenderOptions::new()
         .mode(RenderMode::Blended {

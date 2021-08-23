@@ -63,7 +63,7 @@ impl<'canvas> View for GameView<'canvas> {
     struct TypeTimePoint(Seconds);
 
     let mut mt_events = vec![];
-    let mut player = Player::new(&self.device);
+    let mut player = Player::new(self.device);
     let mut sentence = Sentence::empty();
     let mut time_points = VecDeque::new();
     let mut ended = None;
@@ -93,7 +93,7 @@ impl<'canvas> View for GameView<'canvas> {
       client,
     );
 
-    let mut event = EventBox::new(&self.video);
+    let mut event = EventBox::new(self.video);
 
     event.handle_quit(Box::new(|_| {
       should_quit.set(true);
@@ -182,7 +182,7 @@ impl<'canvas> View for GameView<'canvas> {
 
       let type_per_second = time_points.len() as f64 / 5.0;
       {
-        let pen = Pen::new(&self.renderer);
+        let pen = Pen::new(self.renderer);
         whole_view.update(WholeProps {
           pressed_keys: pressed_key_buf
             .borrow()

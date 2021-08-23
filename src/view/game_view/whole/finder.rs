@@ -91,7 +91,7 @@ impl<'font> Component for Finder<'font> {
     let will_input_japanese = sentence.origin();
     font.set_font_size(JAPANESE_HEIGHT);
     pen.text(
-      &font,
+      font,
       will_input_japanese,
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -113,7 +113,7 @@ impl<'font> Component for Finder<'font> {
       } = sentence.roman();
 
       pen.text(
-        &font,
+        font,
         &will_input,
         FontRenderOptions::new()
           .mode(RenderMode::Blended {
@@ -130,7 +130,7 @@ impl<'font> Component for Finder<'font> {
       );
 
       pen.text(
-        &font,
+        font,
         &inputted,
         FontRenderOptions::new()
           .mode(RenderMode::Blended {
@@ -155,7 +155,7 @@ impl<'font> Component for Finder<'font> {
       } = sentence.yomiagana();
 
       pen.text(
-        &font,
+        font,
         &will_input,
         FontRenderOptions::new()
           .align(TextAlign {
@@ -172,7 +172,7 @@ impl<'font> Component for Finder<'font> {
       );
 
       pen.text(
-        &font,
+        font,
         &inputted,
         FontRenderOptions::new()
           .mode(RenderMode::Blended {
