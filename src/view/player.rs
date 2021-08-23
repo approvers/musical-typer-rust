@@ -1,4 +1,9 @@
-use sdl2::mixer::{Channel, Chunk, Music};
+use rich_sdl2_mixer_rust::{
+  chunk::{channel::ChannelGroup, MixChunk},
+  device::MixDevice,
+  music::MixMusic,
+};
+use rich_sdl2_rust::SdlError;
 use std::{collections::HashMap, path::Path};
 use PlayerError::*;
 
@@ -14,7 +19,7 @@ pub enum SEKind {
 
 #[derive(Debug)]
 pub enum PlayerError {
-  AudioError(String),
+  AudioError(SdlError),
   FileError(std::io::Error),
 }
 
@@ -24,42 +29,22 @@ impl From<std::io::Error> for PlayerError {
   }
 }
 
-type Chunks = HashMap<String, Chunk>;
+type Chunks<'a> = HashMap<String, MixChunk<'a>>;
 
 pub struct Player<'music> {
-  music: Option<Music<'music>>,
-  chunks: Chunks,
-}
-
-impl<'music> Drop for Player<'music> {
-  fn drop(&mut self) {
-    sdl2::mixer::Music::halt();
-  }
-}
-
-fn load_chunks() -> Result<Chunks, PlayerError> {
-  let path = Path::new("asset/");
-  let mut chunks: Chunks = HashMap::new();
-  for entry in path.read_dir()? {
-    let file = entry?;
-    if file.path().extension().map_or(false, |ext| ext == "wav") {
-      chunks.insert(
-        file.path().file_stem().map_or("".into(), |name| {
-          name.to_string_lossy().to_string()
-        }),
-        Chunk::from_file(file.path()).map_err(AudioError)?,
-      );
-    }
-  }
-  Channel::all().set_volume(112); // the max is 128
-  Ok(chunks)
+  device: &'music MixDevice<'music>,
+  music: Option<MixMusic<'music>>,
+  chunks: Chunks<'music>,
+  group: ChannelGroup<'music>,
 }
 
 impl<'music> Player<'music> {
-  pub fn new() -> Self {
+  pub fn new(device: &'music MixDevice) -> Self {
     Self {
+      device,
       music: None,
-      chunks: load_chunks().expect("missing audio file dir"),
+      chunks: load_chunks(device).expect("missing audio file dir"),
+      group: ChannelGroup::new(device, 40),
     }
   }
 
@@ -68,9 +53,8 @@ impl<'music> Player<'music> {
     bgm_name: &str,
   ) -> Result<(), PlayerError> {
     let bgm_file_path = format!("score/{}", bgm_name);
-    let music =
-      sdl2::mixer::Music::from_file(Path::new(&bgm_file_path))
-        .map_err(AudioError)?;
+    let music = MixMusic::new(self.device, &bgm_file_path)
+      .map_err(AudioError)?;
     self.music = Some(music);
     self.play_bgm()?;
     Ok(())
@@ -78,23 +62,29 @@ impl<'music> Player<'music> {
 
   pub fn play_bgm(&self) -> Result<(), PlayerError> {
     if let Some(ref music) = self.music {
-      music.play(0).map_err(AudioError)?;
+      music.play(Some(1)).map_err(AudioError)?;
     }
     Ok(())
   }
 
-  pub fn stop_bgm(&self, fade_time: i32) -> Result<(), PlayerError> {
-    sdl2::mixer::Music::fade_out(fade_time).map_err(AudioError)
+  pub fn stop_bgm(&self, fade_time: u32) -> Result<(), PlayerError> {
+    if let Some(ref music) = self.music {
+      music.fade_out(fade_time);
+    }
+    Ok(())
   }
 
   fn play_se_file(&self, name: &str) -> Result<(), PlayerError> {
-    let chunk = self.chunks.get(name).ok_or_else(|| {
-      AudioError(format!("missing such audio file: {}", name))
-    })?;
-    let _ = Channel::all().play(chunk, 0).map_err(|e| {
-      eprintln!("{:?}", e);
-    });
-    Ok(())
+    let chunk =
+      self.chunks.get(name).expect("sound effect not loaded");
+    if let Some(channel) = self.group.first_free() {
+      channel.play(chunk, Default::default());
+      Ok(())
+    } else {
+      Err(PlayerError::AudioError(SdlError::Others {
+        msg: "not found free channel".into(),
+      }))
+    }
   }
 
   pub fn play_se(&self, kind: SEKind) -> Result<(), PlayerError> {
@@ -109,4 +99,31 @@ impl<'music> Player<'music> {
       PerfectSection => self.play_se_file("perfect_section"),
     }
   }
+}
+
+fn load_chunks<'music>(
+  device: &'music MixDevice,
+) -> Result<Chunks<'music>, PlayerError> {
+  let path = Path::new("asset/");
+  let mut chunks: Chunks = HashMap::new();
+  for entry in path.read_dir()? {
+    let file = entry?;
+    if file.path().extension().map_or(false, |ext| ext == "wav") {
+      chunks.insert(
+        file.path().file_stem().map_or("".into(), |name| {
+          name.to_string_lossy().to_string()
+        }),
+        {
+          let chunk = MixChunk::new(
+            device,
+            file.path().to_str().expect("invalid chunk path"),
+          )
+          .map_err(AudioError)?;
+          chunk.set_volume(112);
+          chunk
+        },
+      );
+    }
+  }
+  Ok(chunks)
 }
