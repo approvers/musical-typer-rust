@@ -54,12 +54,12 @@ impl<'font> Component for Finder<'font> {
   }
 
   fn render(&self, pen: &Pen<'_>) {
-    let &Finder {
+    let Finder {
       props,
       font,
       client,
-    } = self;
-    let &FinderProps {
+    } = &self;
+    let FinderProps {
       remaining_ratio,
       sentence,
     } = &props;
@@ -69,7 +69,7 @@ impl<'font> Component for Finder<'font> {
       g: 220,
       b: 200,
     });
-    pen.fill_rect(client);
+    pen.fill_rect(*client);
 
     let remaining_width =
       (client.size.width as f64 * remaining_ratio) as u32;
@@ -83,7 +83,7 @@ impl<'font> Component for Finder<'font> {
         width: remaining_width,
         ..client.size
       },
-      ..client
+      ..*client
     });
 
     const JAPANESE_HEIGHT: u32 = 30;

@@ -14,12 +14,36 @@ use std::rc::Rc;
 
 use crate::view::Component;
 
-const BLUE: Rgb = 0x4050b4.into();
-const ORANGE: Rgb = 0xd19a1d.into();
-const GREEN: Rgb = 0x144c40.into();
-const BACK: Rgb = 0xfdf3e2.into();
-const BLACK: Rgb = 0.into();
-const GRAY: Rgb = 0xc3c3be.into();
+const BLUE: Rgb = Rgb {
+  r: 0x40,
+  g: 0x50,
+  b: 0xb4,
+};
+const ORANGE: Rgb = Rgb {
+  r: 0xd1,
+  g: 0x9a,
+  b: 0x1d,
+};
+const GREEN: Rgb = Rgb {
+  r: 0x14,
+  g: 0x4c,
+  b: 0x40,
+};
+const BACK: Rgb = Rgb {
+  r: 0xfd,
+  g: 0xf3,
+  b: 0xe2,
+};
+const BLACK: Rgb = Rgb {
+  r: 0,
+  g: 0x0,
+  b: 0x0,
+};
+const GRAY: Rgb = Rgb {
+  r: 0xc3,
+  g: 0xc3,
+  b: 0xbe,
+};
 
 struct KeyCell<'font> {
   font: Rc<Font<'font>>,
@@ -150,7 +174,7 @@ impl<'font> Keyboard<'font> {
           },
         );
         cells.push(KeyCell {
-          font,
+          font: Rc::clone(&font),
           key: key_char,
           is_highlighted: initial_props
             .highlighted_keys

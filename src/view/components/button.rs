@@ -6,7 +6,7 @@ use rich_sdl2_rust::{
 pub struct ButtonProps {
   pub border_color: Rgb,
   pub color_on_hover: Rgb,
-  pub mouse: MouseEvent,
+  pub mouse: Option<MouseEvent>,
 }
 
 impl PartialEq for ButtonProps {
@@ -42,7 +42,7 @@ impl<H: FnMut()> Component for Button<H> {
   fn update(&mut self, props: Self::Props) {
     self.props = props;
 
-    if let MouseEvent::Button(button) = self.props.mouse {
+    if let Some(MouseEvent::Button(ref button)) = self.props.mouse {
       if button.pos.is_in(self.bounds) {
         (self.on_click)();
       }
@@ -50,26 +50,26 @@ impl<H: FnMut()> Component for Button<H> {
   }
 
   fn render(&self, pen: &Pen<'_>) {
-    let &Button { props, bounds, .. } = self;
+    let Button { props, .. } = &self;
+    let bounds = self.bounds;
     let &ButtonProps {
       color_on_hover,
       border_color,
       mouse,
     } = &props;
 
-    let on_hover =
-      if let MouseEvent::Motion(motion) = self.props.mouse {
-        motion.pos.is_in(bounds)
-      } else {
-        false
-      };
+    let on_hover = if let Some(MouseEvent::Motion(motion)) = mouse {
+      motion.pos.is_in(bounds)
+    } else {
+      false
+    };
 
     if on_hover {
-      pen.set_color(color_on_hover);
+      pen.set_color(*color_on_hover);
       pen.fill_rect(bounds);
     }
 
-    pen.set_color(border_color);
+    pen.set_color(*border_color);
     pen.stroke_rect(bounds);
   }
 }

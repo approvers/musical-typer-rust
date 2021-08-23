@@ -51,12 +51,12 @@ impl<'font> Component for Stats<'font> {
   }
 
   fn render(&self, pen: &Pen<'_>) {
-    let &Stats {
+    let Stats {
       props,
       font,
       client,
-    } = self;
-    let &StatsProps {
+    } = &self;
+    let StatsProps {
       type_per_second,
       score,
     } = &props;
@@ -64,7 +64,7 @@ impl<'font> Component for Stats<'font> {
     let accuracy = score.accuracy;
     let achievement_rate = score.achievement_rate;
 
-    let speed_indicator_color = if 4.0 < type_per_second {
+    let speed_indicator_color = if 4.0 < *type_per_second {
       Rgb {
         r: 250,
         g: 119,
