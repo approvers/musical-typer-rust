@@ -1,48 +1,66 @@
+use rich_sdl2_rust::{
+  color::{Rgb, Rgba},
+  delay,
+  geo::{Point, Rect, Size},
+  renderer::{pen::Pen, Renderer},
+  EventBox, Video,
+};
+use rich_sdl2_ttf_rust::font::{
+  pen::{
+    FontRenderExt, FontRenderOptions, TextAlign, TextAlignX,
+    TextAlignY,
+  },
+  Font, RenderMode, StyleExt,
+};
+use std::{
+  cell::{Cell, RefCell},
+  rc::Rc,
+  time::Instant,
+};
+
 use super::{
   components::{
     Button, ButtonProps, Header, HeaderProps, Stats, StatsProps,
   },
-  handler::Handler,
-  renderer::{Component, RenderCtx},
   View, ViewRoute,
 };
-use crate::model::exp::{
-  game_activity::GameScore, scoremap::MusicInfo,
+use crate::{
+  model::exp::{game_activity::GameScore, scoremap::MusicInfo},
+  view::Component,
 };
-use sdl2::{pixels::Color, rect::Rect};
-use std::{cell::RefCell, rc::Rc, time::Instant};
 
-pub struct ResultView<'ttf, 'canvas> {
-  renderer: RenderCtx<'ttf, 'canvas>,
-  handler: Handler,
+pub struct ResultView<'view> {
+  renderer: &'view Renderer<'view>,
   score: GameScore,
   music_info: MusicInfo,
+  font: Rc<Font<'view>>,
+  video: &'view Video<'view>,
 }
 
-impl<'ttf, 'canvas> ResultView<'ttf, 'canvas> {
+impl<'view> ResultView<'view> {
   pub fn new(
-    renderer: RenderCtx<'ttf, 'canvas>,
-    handler: Handler,
+    renderer: &'view Renderer<'view>,
     score: GameScore,
     music_info: MusicInfo,
+    font: Rc<Font<'view>>,
+    video: &'view Video<'view>,
   ) -> Self {
     Self {
       renderer,
-      handler,
       score,
       music_info,
+      font,
+      video,
     }
   }
 }
 
-impl<'ttf, 'canvas> View for ResultView<'ttf, 'canvas> {
+impl<'view> View for ResultView<'view> {
   fn run(&mut self) -> Result<ViewRoute, super::ViewError> {
-    let client = Rect::new(
-      0,
-      0,
-      self.renderer.borrow().width(),
-      self.renderer.borrow().height(),
-    );
+    let client = Rect {
+      up_left: Default::default(),
+      size: self.renderer.output_size(),
+    };
 
     enum Dst {
       Game,
@@ -50,39 +68,59 @@ impl<'ttf, 'canvas> View for ResultView<'ttf, 'canvas> {
     }
     let will_navigate_to = Rc::new(RefCell::new(None));
 
-    let stats_dim =
-      Rect::new(0, client.height() as i32 - 300, client.width(), 200);
+    let stats_dim = Rect {
+      up_left: Point {
+        x: 0,
+        y: client.size.height as i32 - 300,
+      },
+      size: Size {
+        width: client.size.width,
+        height: 200,
+      },
+    };
     let mut stats = Stats::new(
       StatsProps {
         type_per_second: 0.0,
         score: self.score.clone(),
       },
+      Rc::clone(&self.font),
       stats_dim,
     );
 
-    let header_dim = Rect::new(20, 50, client.width() - 40, 100);
+    let header_dim = Rect {
+      up_left: Point { x: 20, y: 50 },
+      size: Size {
+        width: client.size.width.saturating_sub(40),
+        height: 100,
+      },
+    };
     let mut header = Header::new(
       HeaderProps {
         music_info: self.music_info.clone(),
         score_point: self.score.score_point,
       },
+      Rc::clone(&self.font),
       header_dim,
     );
 
     const WIDTH: u32 = 240;
     const HEIGHT: u32 = 80;
     const MARGIN: u32 = 20;
-    let retry_button_area = Rect::new(
-      client.width() as i32 - WIDTH as i32 - MARGIN as i32,
-      client.height() as i32 - HEIGHT as i32 - MARGIN as i32,
-      WIDTH,
-      HEIGHT,
-    );
+    let retry_button_area = Rect {
+      up_left: Point {
+        x: client.size.width as i32 - WIDTH as i32 - MARGIN as i32,
+        y: client.size.height as i32 - HEIGHT as i32 - MARGIN as i32,
+      },
+      size: Size {
+        width: WIDTH,
+        height: HEIGHT,
+      },
+    };
     let mut retry_button = Button::new(
       ButtonProps {
-        border_color: Color::RGB(10, 14, 10),
-        color_on_hover: Color::RGB(220, 224, 220),
-        mouse: self.handler.mouse_state().clone(),
+        border_color: 0x0a0d0a.into(),
+        color_on_hover: 0xdce0dc.into(),
+        mouse: None,
       },
       retry_button_area,
       || {
@@ -90,71 +128,83 @@ impl<'ttf, 'canvas> View for ResultView<'ttf, 'canvas> {
       },
     );
 
+    let should_quit = Cell::new(false);
+
+    let mut event = EventBox::new(&self.video);
+
+    event.handle_quit(Box::new(|_| should_quit.set(true)));
+    event.handle_keyboard(Box::new(|_| should_quit.set(true)));
+
     loop {
+      if should_quit.get() {
+        will_navigate_to.borrow_mut().replace(Dst::Quit);
+      }
       let time = Instant::now();
-      {
-        use sdl2::event::Event::*;
-        let mut should_quit = false;
-        self.handler.poll_events(|event| match event {
-          Quit { .. } => {
-            should_quit = true;
-          }
-          KeyDown { .. } => {
-            should_quit = true;
-          }
-          _ => {}
-        })?;
-        if should_quit {
-          will_navigate_to.borrow_mut().replace(Dst::Quit);
-        }
-      }
-
-      self
-        .renderer
-        .borrow_mut()
-        .set_draw_color(Color::RGB(253, 243, 226));
-      self.renderer.borrow_mut().clear();
-
-      header.update(HeaderProps {
-        music_info: self.music_info.clone(),
-        score_point: self.score.score_point,
-      });
-      header.render(&mut self.renderer.borrow_mut())?;
-
-      stats.update(StatsProps {
-        type_per_second: 0.0,
-        score: self.score.clone(),
-      });
-      stats.render(&mut self.renderer.borrow_mut())?;
 
       {
-        let new_props = ButtonProps {
-          border_color: Color::RGB(10, 14, 10),
-          color_on_hover: Color::RGB(220, 224, 220),
-          mouse: self.handler.mouse_state().clone(),
-        };
-        if retry_button.is_needed_redraw(&new_props) {
-          retry_button.update(new_props);
+        let pen = Pen::new(&self.renderer);
+        pen.set_color(Rgb {
+          r: 253,
+          g: 243,
+          b: 226,
+        });
+        pen.clear();
+
+        header.update(HeaderProps {
+          music_info: self.music_info.clone(),
+          score_point: self.score.score_point,
+        });
+        header.render(&pen);
+
+        stats.update(StatsProps {
+          type_per_second: 0.0,
+          score: self.score.clone(),
+        });
+        stats.render(&pen);
+
+        {
+          let new_props = ButtonProps {
+            border_color: Rgb {
+              r: 10,
+              g: 14,
+              b: 10,
+            },
+            color_on_hover: Rgb {
+              r: 220,
+              g: 224,
+              b: 220,
+            },
+            mouse: None,
+          };
+          if retry_button.is_needed_redraw(&new_props) {
+            retry_button.update(new_props);
+          }
+          retry_button.render(&pen);
+
+          self.font.set_font_size(60);
+          pen.text(
+            &self.font,
+            "再挑戦",
+            FontRenderOptions::new()
+              .mode(RenderMode::Blended {
+                foreground: Rgba {
+                  r: 36,
+                  g: 141,
+                  b: 255,
+                  a: 255,
+                },
+              })
+              .align(TextAlign {
+                x: TextAlignX::Center,
+                y: TextAlignY::Center,
+              })
+              .pivot(retry_button_area.center()),
+          );
         }
-        retry_button.render(&mut self.renderer.borrow_mut())?;
-
-        use super::renderer::text::TextAlign;
-        self.renderer.borrow_mut().text(|style| {
-          style
-            .align(TextAlign::Center)
-            .text("再挑戦")
-            .color(Color::RGB(36, 141, 255))
-            .line_height(60)
-            .pos(retry_button_area.center())
-        })?;
       }
-
-      self.renderer.borrow_mut().flush();
 
       let draw_time = time.elapsed().as_secs_f64();
-      self
-        .handler
-        .delay((1e3 / 60.0 - draw_time * 1e3).max(0.0) as u32)?;
+      delay((1e3 / 60.0 - draw_time * 1e3).max(0.0) as u32);
 
       let will_navigate_to = will_navigate_to.borrow();
       if let Some(will_navigate_to) = will_navigate_to.as_ref() {

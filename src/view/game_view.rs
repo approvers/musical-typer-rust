@@ -1,79 +1,128 @@
-use crate::model::{
-  exp::{scoremap::Scoremap, sentence::Sentence, time::Seconds},
-  game::{
-    MusicalTypeResult, MusicalTyper, MusicalTyperConfig,
-    MusicalTyperEvent,
-  },
+use rich_sdl2_mixer_rust::device::MixDevice;
+use rich_sdl2_rust::{
+  delay,
+  event::keyboard::key_code::KeyCode,
+  geo::Rect,
+  renderer::{pen::Pen, Renderer},
+  EventBox, Video,
 };
-
-use sdl2::keyboard::Keycode;
-
+use rich_sdl2_ttf_rust::font::Font;
 use std::{
+  cell::{Cell, RefCell},
   collections::{BTreeSet, VecDeque},
+  rc::Rc,
   time::Instant,
+};
+use whole::{Whole, WholeProps};
+
+use super::{
+  player::{Player, SEKind},
+  View, ViewError, ViewRoute,
+};
+use crate::{
+  model::{
+    exp::{scoremap::Scoremap, sentence::Sentence, time::Seconds},
+    game::{
+      MusicalTypeResult, MusicalTyper, MusicalTyperConfig,
+      MusicalTyperEvent,
+    },
+  },
+  view::Component,
 };
 
 mod whole;
 
-use super::{
-  handler::Handler,
-  player::{Player, SEKind},
-  renderer::{Component, RenderCtx},
-  View, ViewError, ViewRoute,
-};
-use whole::{Whole, WholeProps};
-
-pub struct GameView<'ttf, 'canvas> {
-  renderer: RenderCtx<'ttf, 'canvas>,
-  handler: Handler,
+pub struct GameView<'view> {
+  renderer: &'view Renderer<'view>,
   model: MusicalTyper,
+  font: Rc<Font<'view>>,
+  device: &'view MixDevice<'view>,
+  video: &'view Video<'view>,
 }
 
-impl<'ttf, 'canvas> GameView<'ttf, 'canvas> {
+impl<'view> GameView<'view> {
   pub fn new(
-    renderer: RenderCtx<'ttf, 'canvas>,
-    handler: Handler,
+    renderer: &'view Renderer<'view>,
     score: Scoremap,
+    font: Rc<Font<'view>>,
+    device: &'view MixDevice<'view>,
+    video: &'view Video<'view>,
   ) -> Result<Self, ViewError> {
     Ok(GameView {
       renderer,
-      handler,
       model: MusicalTyper::new(score, MusicalTyperConfig::default())?,
+      font,
+      device,
+      video,
     })
   }
 }
 
-impl<'ttf, 'canvas> View for GameView<'ttf, 'canvas> {
+impl<'canvas> View for GameView<'canvas> {
   fn run(&mut self) -> Result<ViewRoute, ViewError> {
     struct TypeTimePoint(Seconds);
 
     let mut mt_events = vec![];
-    let mut player = Player::new();
-    let mut pressed_key_buf = BTreeSet::new();
-    let mut typed_key_buf = vec![];
+    let mut player = Player::new(&self.device);
     let mut sentence = Sentence::empty();
     let mut time_points = VecDeque::new();
     let mut ended = None;
 
-    let client = sdl2::rect::Rect::new(
-      0,
-      0,
-      self.renderer.borrow().width(),
-      self.renderer.borrow().height(),
-    );
+    let pressed_key_buf = Rc::new(RefCell::new(BTreeSet::new()));
+    let typed_key_buf = Rc::new(RefCell::new(vec![]));
+    let should_quit = Cell::new(false);
+
+    let client = Rect {
+      up_left: Default::default(),
+      size: self.renderer.output_size(),
+    };
     let mut whole_view = Whole::new(
       WholeProps {
-        pressed_keys: pressed_key_buf.iter().cloned().collect(),
+        pressed_keys: pressed_key_buf
+          .borrow()
+          .iter()
+          .cloned()
+          .collect(),
         sentence: sentence.clone(),
         music_info: self.model.music_info(),
         type_per_second: 0.0,
         score: self.model.activity().score().clone(),
         section_remaining_ratio: self.model.section_remaining_ratio(),
       },
+      Rc::clone(&self.font),
       client,
     );
 
+    let mut event = EventBox::new(&self.video);
+
+    event.handle_quit(Box::new(|_| {
+      should_quit.set(true);
+    }));
+
+    event.handle_keyboard(Box::new(|e| {
+      if e.is_repeated {
+        return;
+      }
+      let key_code = e.symbol.key_code.clone();
+      if e.is_pressed {
+        let key = keycode_to_char(key_code);
+        if pressed_key_buf.borrow_mut().insert(key) {
+          typed_key_buf.borrow_mut().push(key);
+        }
+      } else {
+        pressed_key_buf
+          .borrow_mut()
+          .remove(&keycode_to_char(key_code));
+      }
+    }));
+
     loop {
+      if should_quit.get() {
+        player.stop_bgm(500)?;
+        player.play_se(SEKind::GameOver)?;
+        delay(2500);
+        return Ok(ViewRoute::Quit);
+      }
       let time = Instant::now();
       {
         for mt_event in mt_events.iter() {
@@ -121,37 +170,6 @@ impl<'ttf, 'canvas> View for GameView<'ttf, 'canvas> {
         }
       }
       {
-        use sdl2::event::Event::*;
-        let mut should_quit = false;
-        self.handler.poll_events(|event| match event {
-          Quit { .. } => {
-            should_quit = true;
-          }
-          KeyDown {
-            keycode: Some(keycode),
-            ..
-          } => {
-            let key = keycode_to_char(keycode);
-            if pressed_key_buf.insert(key) {
-              typed_key_buf.push(key);
-            }
-          }
-          KeyUp {
-            keycode: Some(keycode),
-            ..
-          } => {
-            pressed_key_buf.remove(&keycode_to_char(keycode));
-          }
-          _ => {}
-        })?;
-        if should_quit {
-          player.stop_bgm(500)?;
-          player.play_se(SEKind::GameOver)?;
-          self.handler.delay(2500)?;
-          return Ok(ViewRoute::Quit);
-        }
-      }
-      {
         let expire_limit = self.model.accumulated_time() - 5.0.into();
         while let Some(front) = time_points.front() {
           if front.0 < expire_limit {
@@ -163,38 +181,38 @@ impl<'ttf, 'canvas> View for GameView<'ttf, 'canvas> {
       }
 
       let type_per_second = time_points.len() as f64 / 5.0;
+      {
+        let pen = Pen::new(&self.renderer);
+        whole_view.update(WholeProps {
+          pressed_keys: pressed_key_buf
+            .borrow()
+            .iter()
+            .cloned()
+            .collect(),
+          sentence: sentence.clone(),
+          music_info: self.model.music_info(),
+          type_per_second,
+          score: self.model.activity().score().clone(),
+          section_remaining_ratio: self
+            .model
+            .section_remaining_ratio(),
+        });
+        whole_view.render(&pen);
+      }
 
-      whole_view.update(WholeProps {
-        pressed_keys: pressed_key_buf.iter().cloned().collect(),
-        sentence: sentence.clone(),
-        music_info: self.model.music_info(),
-        type_per_second,
-        score: self.model.activity().score().clone(),
-        section_remaining_ratio: self.model.section_remaining_ratio(),
-      });
-      whole_view.render(&mut self.renderer.borrow_mut())?;
-
-      self.renderer.borrow_mut().flush();
-
-      let typed_key_buf_cloned = typed_key_buf.clone();
-      typed_key_buf.clear();
+      let typed_key_buf_cloned = typed_key_buf.borrow().clone();
+      typed_key_buf.borrow_mut().clear();
       mt_events =
         self.model.key_press(typed_key_buf_cloned.into_iter());
 
       let draw_time = time.elapsed().as_secs_f64();
 
-      self
-        .handler
-        .delay((1e3 / 60.0 - draw_time * 1e3).max(0.0) as u32)?;
+      delay((1e3 / 60.0 - draw_time * 1e3).max(0.0) as u32);
 
       let elapsed = time.elapsed().as_secs_f64();
 
       mt_events.append(&mut self.model.elapse_time(elapsed.into()));
-      print!(
-        "\rFPS: {}, Playing: {}     ",
-        1.0 / draw_time,
-        sdl2::mixer::Music::is_playing()
-      );
+      print!("\rFPS: {}     ", 1.0 / draw_time);
 
       if ended
         .as_ref()
@@ -209,8 +227,8 @@ impl<'ttf, 'canvas> View for GameView<'ttf, 'canvas> {
   }
 }
 
-fn keycode_to_char(keycode: Keycode) -> char {
-  use Keycode::*;
+fn keycode_to_char(keycode: KeyCode) -> char {
+  use KeyCode::*;
   match keycode {
     A => 'a',
     B => 'b',
