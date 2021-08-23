@@ -1,11 +1,19 @@
-use crate::view::{handler::MouseState, Component};
-use rich_sdl2_rust::{color::Rgba, geo::Rect, renderer::pen::Pen};
+use crate::view::Component;
+use rich_sdl2_rust::{
+  color::Rgb, event::mouse::MouseEvent, geo::Rect, renderer::pen::Pen,
+};
 
-#[derive(PartialEq)]
 pub struct ButtonProps {
-  pub border_color: Rgba,
-  pub color_on_hover: Rgba,
-  pub mouse: MouseState,
+  pub border_color: Rgb,
+  pub color_on_hover: Rgb,
+  pub mouse: MouseEvent,
+}
+
+impl PartialEq for ButtonProps {
+  fn eq(&self, other: &Self) -> bool {
+    self.border_color == other.border_color
+      && self.color_on_hover == other.color_on_hover
+  }
 }
 
 pub struct Button<H> {
@@ -34,24 +42,27 @@ impl<H: FnMut()> Component for Button<H> {
   fn update(&mut self, props: Self::Props) {
     self.props = props;
 
-    if self
-      .bounds
-      .contains_point(self.props.mouse.started_pressing)
-      && self.bounds.contains_point(self.props.mouse.ended_pressing)
-    {
-      (self.on_click)();
+    if let MouseEvent::Button(button) = self.props.mouse {
+      if button.pos.is_in(self.bounds) {
+        (self.on_click)();
+      }
     }
   }
 
   fn render(&self, pen: &Pen<'_>) {
-    let &Button { props, bounds, .. } = &self;
+    let &Button { props, bounds, .. } = self;
     let &ButtonProps {
       color_on_hover,
       border_color,
       mouse,
     } = &props;
 
-    let on_hover = bounds.contains_point(mouse.mouse_pos);
+    let on_hover =
+      if let MouseEvent::Motion(motion) = self.props.mouse {
+        motion.pos.is_in(bounds)
+      } else {
+        false
+      };
 
     if on_hover {
       pen.set_color(color_on_hover);

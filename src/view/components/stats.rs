@@ -14,25 +14,33 @@ use crate::{model::exp::game_activity::GameScore, view::Component};
 mod rank;
 
 #[derive(PartialEq)]
-pub struct StatsProps<'font> {
-  pub font: Rc<Font<'font>>,
+pub struct StatsProps {
   pub type_per_second: f64,
   pub score: GameScore,
 }
 
 pub struct Stats<'font> {
-  props: StatsProps<'font>,
+  props: StatsProps,
+  font: Rc<Font<'font>>,
   client: Rect,
 }
 
 impl<'font> Stats<'font> {
-  pub fn new(props: StatsProps<'font>, client: Rect) -> Self {
-    Self { props, client }
+  pub fn new(
+    props: StatsProps,
+    font: Rc<Font<'font>>,
+    client: Rect,
+  ) -> Self {
+    Self {
+      props,
+      font,
+      client,
+    }
   }
 }
 
 impl<'font> Component for Stats<'font> {
-  type Props = StatsProps<'font>;
+  type Props = StatsProps;
 
   fn is_needed_redraw(&self, new_props: &Self::Props) -> bool {
     &self.props != new_props
@@ -43,9 +51,12 @@ impl<'font> Component for Stats<'font> {
   }
 
   fn render(&self, pen: &Pen<'_>) {
-    let &Stats { props, client } = &self;
-    let &StatsProps {
+    let &Stats {
+      props,
       font,
+      client,
+    } = self;
+    let &StatsProps {
       type_per_second,
       score,
     } = &props;
@@ -53,7 +64,7 @@ impl<'font> Component for Stats<'font> {
     let accuracy = score.accuracy;
     let achievement_rate = score.achievement_rate;
 
-    let speed_indicator_color = if 4.0 < *type_per_second {
+    let speed_indicator_color = if 4.0 < type_per_second {
       Rgb {
         r: 250,
         g: 119,
@@ -70,21 +81,21 @@ impl<'font> Component for Stats<'font> {
     let rank = rank::rank(accuracy * 200.0);
 
     let speed_indicator_center = Point {
-      x: client.width() as i32 / 2,
-      y: client.y() + 15,
+      x: client.size.width as i32 / 2,
+      y: client.up_left.y + 15,
     };
     pen.set_color(speed_indicator_color);
     pen.fill_rect(Rect::from_center(
       speed_indicator_center,
       Size {
-        width: client.width() - 20,
+        width: client.size.width - 20,
         height: 20,
       },
     ));
 
     font.set_font_size(20);
     pen.text(
-      font,
+      &font,
       &format!("{:04.2} Type/s", type_per_second),
       FontRenderOptions::new()
         .align(TextAlign {
@@ -95,7 +106,7 @@ impl<'font> Component for Stats<'font> {
     );
 
     pen.text(
-      font,
+      &font,
       "正解率",
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -110,7 +121,7 @@ impl<'font> Component for Stats<'font> {
     );
     font.set_font_size(client.size.height - 20);
     pen.text(
-      font,
+      &font,
       &format!("{:05.1}%", accuracy * 100.0),
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -135,14 +146,14 @@ impl<'font> Component for Stats<'font> {
         y: client.bottom() - 10,
       },
       size: Size {
-        width: (client.width() as f64 * 0.5 * accuracy) as u32,
+        width: (client.size.width as f64 * 0.5 * accuracy) as u32,
         height: 2,
       },
     });
 
     font.set_font_size(20);
     pen.text(
-      font,
+      &font,
       "達成率",
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -150,17 +161,17 @@ impl<'font> Component for Stats<'font> {
             r: 160,
             g: 160,
             b: 165,
-            a: (),
+            a: 255,
           },
         })
         .pivot(Point {
           x: client.center().x + client.left() + 10,
-          y: client.y() + 30,
+          y: client.up_left.y + 30,
         }),
     );
-    font.set_font_size(client.height() - 20);
+    font.set_font_size(client.size.height - 20);
     pen.text(
-      font,
+      &font,
       &format!("{:05.1}%", achievement_rate * 100.0),
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -168,17 +179,17 @@ impl<'font> Component for Stats<'font> {
             r: 64,
             g: 79,
             b: 181,
-            a: (),
+            a: 255,
           },
         })
         .pivot(Point {
           x: client.center().x + client.left() + 10,
-          y: client.y() + 30,
+          y: client.up_left.y + 30,
         }),
     );
 
     pen.text(
-      font,
+      &font,
       "ランク",
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -193,7 +204,7 @@ impl<'font> Component for Stats<'font> {
     );
     font.set_font_size(25);
     pen.text(
-      font,
+      &font,
       rank.0,
       FontRenderOptions::new()
         .mode(RenderMode::Blended {

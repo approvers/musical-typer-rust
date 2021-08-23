@@ -8,25 +8,33 @@ use std::rc::Rc;
 use crate::{model::exp::scoremap::MusicInfo, view::Component};
 
 #[derive(PartialEq)]
-pub struct HeaderProps<'font> {
-  pub font: Rc<Font<'font>>,
+pub struct HeaderProps {
   pub music_info: MusicInfo,
   pub score_point: i32,
 }
 
 pub struct Header<'font> {
-  props: HeaderProps<'font>,
+  props: HeaderProps,
+  font: Rc<Font<'font>>,
   client: Rect,
 }
 
 impl<'font> Header<'font> {
-  pub fn new(props: HeaderProps<'font>, client: Rect) -> Self {
-    Self { props, client }
+  pub fn new(
+    props: HeaderProps,
+    font: Rc<Font<'font>>,
+    client: Rect,
+  ) -> Self {
+    Self {
+      props,
+      font,
+      client,
+    }
   }
 }
 
 impl<'font> Component for Header<'font> {
-  type Props = HeaderProps<'font>;
+  type Props = HeaderProps;
 
   fn is_needed_redraw(&self, new_props: &Self::Props) -> bool {
     &self.props != new_props
@@ -37,9 +45,12 @@ impl<'font> Component for Header<'font> {
   }
 
   fn render(&self, pen: &Pen<'_>) {
-    let &Header { props, client } = &self;
-    let &HeaderProps {
+    let &Header {
       font,
+      props,
+      client,
+    } = &self;
+    let &HeaderProps {
       music_info,
       score_point,
     } = &props;
