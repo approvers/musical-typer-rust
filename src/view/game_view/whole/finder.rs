@@ -15,20 +15,21 @@ use crate::{
 };
 
 #[derive(PartialEq)]
-pub struct FinderProps<'font> {
-  pub font: Rc<Font<'font>>,
+pub struct FinderProps {
   pub sentence: Sentence,
   pub remaining_ratio: f64,
 }
 
 pub struct Finder<'font> {
-  props: FinderProps<'font>,
+  props: FinderProps,
   client: Rect,
+  font: Rc<Font<'font>>,
 }
 
 impl<'font> Finder<'font> {
   pub fn new(
-    mut initial_props: FinderProps<'font>,
+    mut initial_props: FinderProps,
+    font: Rc<Font<'font>>,
     client: Rect,
   ) -> Self {
     initial_props.remaining_ratio =
@@ -36,12 +37,13 @@ impl<'font> Finder<'font> {
     Self {
       props: initial_props,
       client,
+      font,
     }
   }
 }
 
 impl<'font> Component for Finder<'font> {
-  type Props = FinderProps<'font>;
+  type Props = FinderProps;
 
   fn is_needed_redraw(&self, new_props: &Self::Props) -> bool {
     &self.props != new_props
@@ -52,9 +54,12 @@ impl<'font> Component for Finder<'font> {
   }
 
   fn render(&self, pen: &Pen<'_>) {
-    let &Finder { props, client } = &self;
-    let &FinderProps {
+    let &Finder {
+      props,
       font,
+      client,
+    } = self;
+    let &FinderProps {
       remaining_ratio,
       sentence,
     } = &props;
@@ -67,7 +72,7 @@ impl<'font> Component for Finder<'font> {
     pen.fill_rect(client);
 
     let remaining_width =
-      (client.width() as f64 * remaining_ratio) as u32;
+      (client.size.width as f64 * remaining_ratio) as u32;
     pen.set_color(Rgb {
       r: 203,
       g: 193,
@@ -82,11 +87,11 @@ impl<'font> Component for Finder<'font> {
     });
 
     const JAPANESE_HEIGHT: u32 = 30;
-    let half_x = (client.width() / 2) as i32;
+    let half_x = (client.size.width / 2) as i32;
     let will_input_japanese = sentence.origin();
     font.set_font_size(JAPANESE_HEIGHT);
     pen.text(
-      font,
+      &font,
       will_input_japanese,
       FontRenderOptions::new()
         .mode(RenderMode::Blended {
@@ -108,7 +113,7 @@ impl<'font> Component for Finder<'font> {
       } = sentence.roman();
 
       pen.text(
-        font,
+        &font,
         &will_input,
         FontRenderOptions::new()
           .mode(RenderMode::Blended {
@@ -125,7 +130,7 @@ impl<'font> Component for Finder<'font> {
       );
 
       pen.text(
-        font,
+        &font,
         &inputted,
         FontRenderOptions::new()
           .mode(RenderMode::Blended {
@@ -150,7 +155,7 @@ impl<'font> Component for Finder<'font> {
       } = sentence.yomiagana();
 
       pen.text(
-        font,
+        &font,
         &will_input,
         FontRenderOptions::new()
           .align(TextAlign {
@@ -167,7 +172,7 @@ impl<'font> Component for Finder<'font> {
       );
 
       pen.text(
-        font,
+        &font,
         &inputted,
         FontRenderOptions::new()
           .mode(RenderMode::Blended {

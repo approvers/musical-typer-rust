@@ -1,6 +1,6 @@
 use rich_sdl2_rust::{
   color::Rgb,
-  geo::{Point, Rect},
+  geo::{Point, Rect, Size},
   renderer::pen::Pen,
 };
 use rich_sdl2_ttf_rust::font::{
@@ -21,13 +21,21 @@ const BACK: Rgb = 0xfdf3e2.into();
 const BLACK: Rgb = 0.into();
 const GRAY: Rgb = 0xc3c3be.into();
 
-#[derive(PartialEq)]
 struct KeyCell<'font> {
   font: Rc<Font<'font>>,
   key: char,
   is_highlighted: bool,
   is_pressed: bool,
   client: Rect,
+}
+
+impl PartialEq for KeyCell<'_> {
+  fn eq(&self, other: &Self) -> bool {
+    self.key == other.key
+      && self.is_highlighted == other.is_highlighted
+      && self.is_pressed == other.is_pressed
+      && self.client == other.client
+  }
 }
 
 impl KeyCell<'_> {
@@ -66,8 +74,10 @@ impl Component for KeyCell<'_> {
   fn render(&self, pen: &Pen<'_>) {
     let border_dim = Rect::from_center(
       self.client.center(),
-      self.client.width() - 5,
-      self.client.height() - 5,
+      Size {
+        width: self.client.size.width - 5,
+        height: self.client.size.height - 5,
+      },
     );
     pen.set_color(self.bg_color());
     pen.fill_rect(border_dim);
@@ -75,7 +85,7 @@ impl Component for KeyCell<'_> {
     pen.stroke_rect(border_dim);
 
     pen.text(
-      self.font,
+      &self.font,
       &self.key.to_string().to_uppercase(),
       FontRenderOptions::new()
         .align(TextAlign {
@@ -88,20 +98,21 @@ impl Component for KeyCell<'_> {
 }
 
 #[derive(PartialEq)]
-pub struct KeyboardProps<'font> {
-  pub font: Rc<Font<'font>>,
+pub struct KeyboardProps {
   pub pressed_keys: Vec<char>,
   pub highlighted_keys: Vec<char>,
 }
 
 pub struct Keyboard<'font> {
-  props: KeyboardProps<'font>,
+  props: KeyboardProps,
   cells: Vec<KeyCell<'font>>,
+  font: Rc<Font<'font>>,
 }
 
 impl<'font> Keyboard<'font> {
   pub fn new(
-    initial_props: KeyboardProps<'font>,
+    initial_props: KeyboardProps,
+    font: Rc<Font<'font>>,
     client: Rect,
   ) -> Self {
     const CELL_ASPECT: f64 = 1.0;
@@ -113,7 +124,7 @@ impl<'font> Keyboard<'font> {
     ];
 
     let cell_height =
-      client.height() as f64 / KEY_CHARS_ROWS.len() as f64;
+      client.size.height as f64 / KEY_CHARS_ROWS.len() as f64;
     let cell_width = cell_height * CELL_ASPECT;
 
     let mut cells = vec![];
@@ -121,22 +132,25 @@ impl<'font> Keyboard<'font> {
     for (y, key_chars_row) in KEY_CHARS_ROWS.iter().enumerate() {
       let y = y as f64;
       let row_amount = key_chars_row.len() as f64;
-      let margin = client.width() as f64 - row_amount * cell_width;
+      let margin = client.size.width as f64 - row_amount * cell_width;
       for (x, key_char) in key_chars_row.chars().enumerate() {
         let x = x as f64 + 1.0;
         let center = Point {
-          x: (x * cell_width + client.x() as f64 + margin / 2.0)
+          x: (x * cell_width + client.left() as f64 + margin / 2.0)
             as i32,
-          y: (y * cell_height + client.y() as f64 + cell_height / 2.0)
-            as i32,
+          y: (y * cell_height
+            + client.top() as f64
+            + cell_height / 2.0) as i32,
         };
         let key_cell_client = Rect::from_center(
           center,
-          cell_width as u32,
-          cell_height as u32,
+          Size {
+            width: cell_width as u32,
+            height: cell_height as u32,
+          },
         );
         cells.push(KeyCell {
-          font: Rc::clone(&initial_props.font),
+          font,
           key: key_char,
           is_highlighted: initial_props
             .highlighted_keys
@@ -150,12 +164,13 @@ impl<'font> Keyboard<'font> {
     Self {
       cells,
       props: initial_props,
+      font,
     }
   }
 }
 
 impl<'font> Component for Keyboard<'font> {
-  type Props = KeyboardProps<'font>;
+  type Props = KeyboardProps;
 
   fn is_needed_redraw(&self, new_props: &Self::Props) -> bool {
     &self.props != new_props
@@ -169,6 +184,5 @@ impl<'font> Component for Keyboard<'font> {
     for cell in &self.cells {
       cell.render(ctx);
     }
-    Ok(())
   }
 }
