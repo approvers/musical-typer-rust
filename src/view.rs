@@ -1,48 +1,51 @@
+use std::rc::Rc;
+
 use crate::model::exp::{
   game_activity::GameScore,
   scoremap::{MusicInfo, Scoremap},
 };
 use crate::model::game::MusicalTyperError;
 use game_view::GameView;
-use handler::{HandleError, Handler};
 use player::PlayerError;
-use renderer::{text::TextError, RenderCtx, Renderer};
 use result_view::ResultView;
-use std::{cell::RefCell, rc::Rc};
+use rich_sdl2_mixer_rust::{
+  device::{MixDevice, MixDeviceBuilder},
+  FormatFlag, Mix,
+};
+use rich_sdl2_rust::{
+  renderer::{pen::Pen, Renderer},
+  window::{WindowBuilder, WindowContextKind},
+  Sdl, Video,
+};
+use rich_sdl2_ttf_rust::{font::Font, Ttf};
 
 mod components;
 mod game_view;
-mod handler;
 mod player;
-mod renderer;
 mod result_view;
+
+pub trait Component {
+  type Props;
+
+  fn is_needed_redraw(&self, new_props: &Self::Props) -> bool;
+
+  fn update(&mut self, new_props: Self::Props);
+
+  fn render(&self, ctx: &Pen<'_>);
+}
 
 #[derive(Debug)]
 pub enum ViewError {
   ModelError(MusicalTyperError),
   FontError(String),
   PlayerError(PlayerError),
-  TextError(TextError),
   RenderError(String),
   CacheError,
-  HandleError(HandleError),
 }
 
 impl From<MusicalTyperError> for ViewError {
   fn from(err: MusicalTyperError) -> Self {
     ViewError::ModelError(err)
-  }
-}
-
-impl From<TextError> for ViewError {
-  fn from(err: TextError) -> Self {
-    ViewError::TextError(err)
-  }
-}
-
-impl From<HandleError> for ViewError {
-  fn from(err: HandleError) -> Self {
-    ViewError::HandleError(err)
   }
 }
 
@@ -65,29 +68,36 @@ impl From<PlayerError> for ViewError {
   }
 }
 
-struct Router<'ttf, 'canvas> {
-  handler: Handler,
-  renderer: RenderCtx<'ttf, 'canvas>,
+struct Router<'router> {
+  renderer: Renderer<'router>,
+  video: &'router Video<'router>,
+  font: Rc<Font<'router>>,
+  mix_device: MixDevice<'router>,
 }
 
-impl<'ttf, 'canvas> Router<'ttf, 'canvas> {
+impl<'router> Router<'router> {
   pub fn new(
-    handler: Handler,
-    renderer: Renderer<'ttf, 'canvas>,
+    renderer: Renderer<'router>,
+    video: &'router Video<'router>,
+    font: Font<'router>,
+    mix_device: MixDevice<'router>,
   ) -> Self {
     Self {
-      handler,
-      renderer: Rc::new(RefCell::new(renderer)),
+      renderer,
+      video,
+      font: Rc::new(font),
+      mix_device,
     }
   }
 
   pub fn run(self, score: Scoremap) -> Result<(), ViewError> {
     let mut view: Option<Box<dyn View>> =
       Some(Box::new(ResultView::new(
-        self.renderer.clone(),
-        self.handler.clone(),
+        &self.renderer,
         GameScore::new(0, 0.0, 0.0),
         score.metadata.get_music_info(),
+        Rc::clone(&self.font),
+        &self.video,
       )));
     while let Some(boxed_view) = view.as_mut() {
       let next = boxed_view.run()?;
@@ -96,17 +106,21 @@ impl<'ttf, 'canvas> Router<'ttf, 'canvas> {
         ViewRoute::Start(_) => {}
         ViewRoute::Retry => {
           view.replace(Box::new(GameView::new(
-            self.renderer.clone(),
-            self.handler.clone(),
+            &self.renderer,
             score.clone(),
+            Rc::clone(&self.font),
+            &self.mix_device,
+            &self.video,
           )?));
         }
         ViewRoute::ResultView(score, info) => {
+          view = None;
           view.replace(Box::new(ResultView::new(
-            self.renderer.clone(),
-            self.handler.clone(),
+            &self.renderer,
             score,
             info,
+            Rc::clone(&self.font),
+            &self.video,
           )));
         }
         ViewRoute::Quit => {
@@ -120,42 +134,28 @@ impl<'ttf, 'canvas> Router<'ttf, 'canvas> {
 }
 
 pub fn run_router(score: Scoremap) -> Result<(), ViewError> {
-  use std::path::Path;
+  let sdl = Sdl::new();
+  let ttf = Ttf::new();
+  let mix = Mix::new(FormatFlag::MP3).expect("mp3 loader not found");
+  let mut builder = MixDeviceBuilder::new();
+  builder.frequency(44100).chunk_size(1024);
+  let dev =
+    builder.build(&mix).expect("Fail to open an audio channel");
 
-  let sdl = sdl2::init().unwrap();
-  let ttf = sdl2::ttf::init().unwrap();
-  sdl2::mixer::open_audio(
-    44100,
-    sdl2::mixer::DEFAULT_FORMAT,
-    sdl2::mixer::DEFAULT_CHANNELS,
-    1024,
-  )
-  .expect("Fail to open an audio channel");
-  sdl2::mixer::allocate_channels(32);
+  let font =
+    Font::new(&ttf, "./asset/mplus-1m-medium.ttf", 128, None)
+      .expect("Font file is not found");
 
-  let font = ttf
-    .load_font(Path::new("./asset/mplus-1m-medium.ttf"), 128)
-    .expect("Font file is not found");
+  let video = Video::new(&sdl);
+  let window = WindowBuilder::default()
+    .title("Musical Typer")
+    .width(800)
+    .height(600)
+    .context_kind(WindowContextKind::OpenGl)
+    .build(&video);
 
-  let video = sdl.video().expect("Fail to init video subsystem");
-  let window = video
-    .window("Musical Typer", 800, 600)
-    .position_centered()
-    .opengl()
-    .build()
-    .expect("Fail to open an window");
+  let renderer = Renderer::new(&window);
 
-  let canvas = window
-    .into_canvas()
-    .build()
-    .expect("Fail to create a canvas");
-  let texture_creator = canvas.texture_creator();
-
-  let handler = Handler::new(sdl);
-  let renderer =
-    Renderer::new(800, 600, canvas, font, &texture_creator)
-      .expect("Fail to init a renderer");
-
-  Router::new(handler, renderer).run(score)?;
+  Router::new(renderer, &video, font, dev).run(score)?;
   Ok(())
 }
