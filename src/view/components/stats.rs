@@ -4,7 +4,10 @@ use rich_sdl2_rust::{
   renderer::pen::Pen,
 };
 use rich_sdl2_ttf_rust::font::{
-  pen::{FontRenderExt, FontRenderOptions, TextAlign, TextAlignX},
+  pen::{
+    FontRenderExt, FontRenderOptions, TextAlign, TextAlignX,
+    TextAlignY,
+  },
   Font, RenderMode, StyleExt,
 };
 use std::rc::Rc;
@@ -100,11 +103,12 @@ impl<'font> Component for Stats<'font> {
       FontRenderOptions::new()
         .align(TextAlign {
           x: TextAlignX::Center,
-          ..Default::default()
+          y: TextAlignY::Center,
         })
         .pivot(speed_indicator_center),
     );
 
+    font.set_font_size(30);
     pen.text(
       font,
       "正解率",
@@ -151,7 +155,7 @@ impl<'font> Component for Stats<'font> {
       },
     });
 
-    font.set_font_size(20);
+    font.set_font_size(30);
     pen.text(
       font,
       "達成率",
@@ -188,6 +192,7 @@ impl<'font> Component for Stats<'font> {
         }),
     );
 
+    font.set_font_size(25);
     pen.text(
       font,
       "ランク",
@@ -200,9 +205,9 @@ impl<'font> Component for Stats<'font> {
             a: 255,
           },
         })
-        .pivot(client.up_left.offset(10, -40)),
+        .pivot(client.up_left.offset(10, -60)),
     );
-    font.set_font_size(25);
+    font.set_font_size(35);
     pen.text(
       font,
       rank.0,
@@ -215,7 +220,7 @@ impl<'font> Component for Stats<'font> {
             a: 255,
           },
         })
-        .pivot(client.up_left.offset(10, -25)),
+        .pivot(client.up_left.offset(10, -30)),
     );
   }
 }

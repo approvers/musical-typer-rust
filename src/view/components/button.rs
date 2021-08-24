@@ -1,6 +1,9 @@
 use crate::view::Component;
 use rich_sdl2_rust::{
-  color::Rgb, event::mouse::MouseEvent, geo::Rect, renderer::pen::Pen,
+  color::Rgb,
+  event::mouse::{MouseEvent, MouseMotionEvent},
+  geo::Rect,
+  renderer::pen::Pen,
 };
 
 pub struct ButtonProps {
@@ -13,6 +16,21 @@ impl PartialEq for ButtonProps {
   fn eq(&self, other: &Self) -> bool {
     self.border_color == other.border_color
       && self.color_on_hover == other.color_on_hover
+      && self.mouse.is_some()
+      && other.mouse.is_some()
+      && match (
+        self.mouse.as_ref().unwrap(),
+        other.mouse.as_ref().unwrap(),
+      ) {
+        (
+          MouseEvent::Motion(MouseMotionEvent { pos, .. }),
+          MouseEvent::Motion(MouseMotionEvent {
+            pos: other_pos, ..
+          }),
+        ) => pos == other_pos,
+        (MouseEvent::Button(_), MouseEvent::Button(_)) => true,
+        _ => false,
+      }
   }
 }
 

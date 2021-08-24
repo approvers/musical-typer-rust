@@ -129,11 +129,15 @@ impl<'view> View for ResultView<'view> {
     );
 
     let should_quit = Cell::new(false);
+    let mouse_event = Rc::new(RefCell::new(None));
 
     let mut event = EventBox::new(self.video);
 
     event.handle_quit(Box::new(|_| should_quit.set(true)));
     event.handle_keyboard(Box::new(|_| should_quit.set(true)));
+    event.handle_mouse(Box::new(|mouse| {
+      *mouse_event.borrow_mut() = Some(mouse.clone())
+    }));
 
     loop {
       if should_quit.get() {
@@ -174,7 +178,7 @@ impl<'view> View for ResultView<'view> {
               g: 224,
               b: 220,
             },
-            mouse: None,
+            mouse: mouse_event.borrow().clone(),
           };
           if retry_button.is_needed_redraw(&new_props) {
             retry_button.update(new_props);
