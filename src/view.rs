@@ -152,7 +152,9 @@ pub fn run_router(score: Scoremap) -> Result<(), ViewError> {
     .width(800)
     .height(600)
     .context_kind(WindowContextKind::OpenGl)
+    .allow_high_dpi(true)
     .build(&video);
+  window.show();
 
   let renderer = Renderer::new(&window);
 

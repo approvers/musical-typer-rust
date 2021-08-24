@@ -169,6 +169,7 @@ impl<'canvas> View for GameView<'canvas> {
           }
         }
       }
+      event.poll();
       {
         let expire_limit = self.model.accumulated_time() - 5.0.into();
         while let Some(front) = time_points.front() {

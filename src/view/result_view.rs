@@ -140,7 +140,7 @@ impl<'view> View for ResultView<'view> {
         will_navigate_to.borrow_mut().replace(Dst::Quit);
       }
       let time = Instant::now();
-
+      event.poll();
       {
         let pen = Pen::new(self.renderer);
         pen.set_color(Rgb {
