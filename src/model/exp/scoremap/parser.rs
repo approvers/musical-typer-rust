@@ -13,23 +13,23 @@ mod tests;
 
 #[derive(Debug)]
 pub enum ScoremapParseError {
-  InvalidCommand {
+  Command {
     line_num: usize,
     reason: &'static str,
   },
-  InvalidPropertyDefinition {
+  PropertyDefinition {
     line_num: usize,
     reason: &'static str,
   },
-  InvalidStatementDefinition {
+  StatementDefinition {
     line_num: usize,
     reason: &'static str,
   },
-  InvalidTimingDefinition {
+  TimingDefinition {
     line_num: usize,
     reason: &'static str,
   },
-  InvalidDuration {
+  Duration {
     line_num: usize,
     err: DurationError,
   },

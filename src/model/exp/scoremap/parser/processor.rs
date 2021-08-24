@@ -53,10 +53,7 @@ impl ParserCtx {
       self.curr_time.clone().as_seconds().as_f64(),
       next_time.as_seconds().as_f64(),
     )
-    .map_err(|err| ScoremapParseError::InvalidDuration {
-      line_num,
-      err,
-    })
+    .map_err(|err| ScoremapParseError::Duration { line_num, err })
   }
 }
 
@@ -112,7 +109,7 @@ pub(super) fn single_time_processor(
     } = ctx;
     if !*parsing_lyrics {
       eprintln!("{:?}", tokens);
-      return Some(Err(InvalidTimingDefinition {
+      return Some(Err(TimingDefinition {
         line_num: *line_num,
         reason: "時間指定は歌詞定義の中のみ有効です。",
       }));
@@ -145,7 +142,7 @@ pub(super) fn command_processor(
     match command.as_str() {
       "start" => {
         if *parsing_lyrics {
-          return Some(Err(InvalidCommand {
+          return Some(Err(Command {
             line_num,
             reason: "start コマンドは end コマンドより前で有効です。",
           }));
@@ -155,7 +152,7 @@ pub(super) fn command_processor(
       "break" => {}
       "end" => {
         if !*parsing_lyrics {
-          return Some(Err(InvalidCommand {
+          return Some(Err(Command {
             line_num,
             reason: "end コマンドは start コマンドより後で有効です。",
           }));
@@ -163,7 +160,7 @@ pub(super) fn command_processor(
         *parsing_lyrics = false;
       }
       _ => {
-        return Some(Err(InvalidCommand {
+        return Some(Err(Command {
           line_num,
           reason: "start、break、end コマンドのみが有効です。",
         }));
@@ -186,7 +183,7 @@ pub(super) fn caption_processor(
     tokens.remove(0);
     let ParserCtx { parsing_lyrics, .. } = ctx;
     if !*parsing_lyrics {
-      return Some(Err(InvalidStatementDefinition {
+      return Some(Err(StatementDefinition {
         line_num: *line_num,
         reason: "キャプションの指定は歌詞定義の中のみ有効です。",
       }));
@@ -211,7 +208,7 @@ pub(super) fn property_processor(
   {
     tokens.remove(0);
     if *parsing_lyrics {
-      return Some(Err(InvalidPropertyDefinition {
+      return Some(Err(PropertyDefinition {
         line_num: *line_num,
         reason: "プロパティの指定は歌詞定義の外のみ有効です。",
       }));
@@ -241,7 +238,7 @@ pub(super) fn yomigana_processor(
       *parsed_japanese = None;
       return Some(Ok(Note::sentence(duration, sentence)));
     }
-    return Some(Err(InvalidStatementDefinition {
+    return Some(Err(StatementDefinition {
       line_num: *line_num,
       reason: "読み仮名は歌詞より後にしてください。",
     }));

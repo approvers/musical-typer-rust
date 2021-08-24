@@ -47,7 +47,7 @@ impl Section {
 
   pub fn update(&mut self, time: &Seconds) -> bool {
     for (index, note) in self.notes.iter().enumerate() {
-      if note.duration().includes(&time) {
+      if note.duration().includes(time) {
         self.current_note_index = index;
         return true;
       }
