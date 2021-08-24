@@ -7,19 +7,19 @@ use view::ViewError;
 
 #[derive(Debug)]
 pub enum EntireError {
-  ScoremapError(ScoremapError),
-  ViewError(ViewError),
+  Scoremap(ScoremapError),
+  View(ViewError),
 }
 
 impl From<ScoremapError> for EntireError {
   fn from(err: ScoremapError) -> Self {
-    EntireError::ScoremapError(err)
+    EntireError::Scoremap(err)
   }
 }
 
 impl From<ViewError> for EntireError {
   fn from(err: ViewError) -> Self {
-    EntireError::ViewError(err)
+    EntireError::View(err)
   }
 }
 
