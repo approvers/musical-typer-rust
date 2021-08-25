@@ -516,9 +516,9 @@ dependencies = [
 
 [[package]]
 name = "rich-sdl2-ttf-rust"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14360867f6a30891be4a3e954d1d6854b7e8ae29aea2db99e0438eefa0ac4ac4"
+checksum = "98ffabe710945aa6bc00302c9c71bf2205ee9a4846f80f6685f3be4a0fcd0e1e"
 dependencies = [
  "bindgen",
  "git2",
