@@ -96,7 +96,7 @@ impl<'font> Component for Stats<'font> {
       },
     ));
 
-    font.set_font_size(20);
+    font.set_font_size(10);
     pen.text(
       font,
       &format!("{:04.2} Type/s", type_per_second),
@@ -108,7 +108,7 @@ impl<'font> Component for Stats<'font> {
         .pivot(speed_indicator_center),
     );
 
-    font.set_font_size(30);
+    font.set_font_size(15);
     pen.text(
       font,
       "正解率",
@@ -123,7 +123,7 @@ impl<'font> Component for Stats<'font> {
         })
         .pivot(client.up_left.offset(10, 30)),
     );
-    font.set_font_size(client.size.height - 20);
+    font.set_font_size(80);
     pen.text(
       font,
       &format!("{:05.1}%", accuracy * 100.0),
@@ -155,7 +155,7 @@ impl<'font> Component for Stats<'font> {
       },
     });
 
-    font.set_font_size(30);
+    font.set_font_size(15);
     pen.text(
       font,
       "達成率",
@@ -173,7 +173,7 @@ impl<'font> Component for Stats<'font> {
           y: client.up_left.y + 30,
         }),
     );
-    font.set_font_size(client.size.height - 20);
+    font.set_font_size(80);
     pen.text(
       font,
       &format!("{:05.1}%", achievement_rate * 100.0),
@@ -192,7 +192,7 @@ impl<'font> Component for Stats<'font> {
         }),
     );
 
-    font.set_font_size(25);
+    font.set_font_size(12);
     pen.text(
       font,
       "ランク",
@@ -207,7 +207,7 @@ impl<'font> Component for Stats<'font> {
         })
         .pivot(client.up_left.offset(10, -60)),
     );
-    font.set_font_size(35);
+    font.set_font_size(16);
     pen.text(
       font,
       rank.0,
