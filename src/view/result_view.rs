@@ -78,7 +78,7 @@ impl<'view> View for ResultView<'view> {
         height: 200,
       },
     };
-    let mut stats = Stats::new(
+    let stats = Stats::new(
       StatsProps {
         type_per_second: 0.0,
         score: self.score.clone(),
@@ -94,7 +94,7 @@ impl<'view> View for ResultView<'view> {
         height: 100,
       },
     };
-    let mut header = Header::new(
+    let header = Header::new(
       HeaderProps {
         music_info: self.music_info.clone(),
         score_point: self.score.score_point,
@@ -154,57 +154,38 @@ impl<'view> View for ResultView<'view> {
         });
         pen.clear();
 
-        header.update(HeaderProps {
-          music_info: self.music_info.clone(),
-          score_point: self.score.score_point,
-        });
         header.render(&pen);
-
-        stats.update(StatsProps {
-          type_per_second: 0.0,
-          score: self.score.clone(),
-        });
         stats.render(&pen);
 
-        {
-          let new_props = ButtonProps {
-            border_color: Rgb {
-              r: 10,
-              g: 14,
-              b: 10,
-            },
-            color_on_hover: Rgb {
-              r: 220,
-              g: 224,
-              b: 220,
-            },
-            mouse: mouse_event.borrow().clone(),
-          };
-          if retry_button.is_needed_redraw(&new_props) {
-            retry_button.update(new_props);
-          }
-          retry_button.render(&pen);
-
-          self.font.set_font_size(60);
-          pen.text(
-            &self.font,
-            "再挑戦",
-            FontRenderOptions::new()
-              .mode(RenderMode::Blended {
-                foreground: Rgba {
-                  r: 36,
-                  g: 141,
-                  b: 255,
-                  a: 255,
-                },
-              })
-              .align(TextAlign {
-                x: TextAlignX::Center,
-                y: TextAlignY::Center,
-              })
-              .pivot(retry_button_area.center()),
-          );
+        let new_props = ButtonProps {
+          border_color: 0x0a0d0a.into(),
+          color_on_hover: 0xdce0dc.into(),
+          mouse: mouse_event.borrow().clone(),
+        };
+        if retry_button.is_needed_redraw(&new_props) {
+          retry_button.update(new_props);
         }
+        retry_button.render(&pen);
+
+        self.font.set_font_size(60);
+        pen.text(
+          &self.font,
+          "再挑戦",
+          FontRenderOptions::new()
+            .mode(RenderMode::Blended {
+              foreground: Rgba {
+                r: 36,
+                g: 141,
+                b: 255,
+                a: 255,
+              },
+            })
+            .align(TextAlign {
+              x: TextAlignX::Center,
+              y: TextAlignY::Center,
+            })
+            .pivot(retry_button_area.center()),
+        );
       }
 
       let draw_time = time.elapsed().as_secs_f64();
