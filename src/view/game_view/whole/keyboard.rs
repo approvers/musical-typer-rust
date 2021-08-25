@@ -8,7 +8,7 @@ use rich_sdl2_ttf_rust::font::{
     FontRenderExt, FontRenderOptions, TextAlign, TextAlignX,
     TextAlignY,
   },
-  Font, RenderMode,
+  Font, RenderMode, StyleExt,
 };
 use std::rc::Rc;
 
@@ -139,6 +139,8 @@ pub struct KeyboardProps {
 pub struct Keyboard<'font> {
   props: KeyboardProps,
   cells: Vec<KeyCell<'font>>,
+
+  font: Rc<Font<'font>>,
 }
 
 impl<'font> Keyboard<'font> {
@@ -196,6 +198,7 @@ impl<'font> Keyboard<'font> {
     Self {
       cells,
       props: initial_props,
+      font,
     }
   }
 }
@@ -212,6 +215,7 @@ impl<'font> Component for Keyboard<'font> {
   }
 
   fn render(&self, ctx: &Pen<'_>) {
+    self.font.set_font_size(20);
     for cell in &self.cells {
       cell.render(ctx);
     }
