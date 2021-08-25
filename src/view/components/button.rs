@@ -1,7 +1,7 @@
 use crate::view::Component;
 use rich_sdl2_rust::{
   color::Rgb,
-  event::mouse::{MouseEvent, MouseMotionEvent},
+  event::mouse::{MouseButton, MouseEvent, MouseMotionEvent},
   geo::Rect,
   renderer::pen::Pen,
 };
@@ -16,21 +16,23 @@ impl PartialEq for ButtonProps {
   fn eq(&self, other: &Self) -> bool {
     self.border_color == other.border_color
       && self.color_on_hover == other.color_on_hover
-      && self.mouse.is_some()
-      && other.mouse.is_some()
-      && match (
-        self.mouse.as_ref().unwrap(),
-        other.mouse.as_ref().unwrap(),
-      ) {
-        (
-          MouseEvent::Motion(MouseMotionEvent { pos, .. }),
-          MouseEvent::Motion(MouseMotionEvent {
-            pos: other_pos, ..
-          }),
-        ) => pos == other_pos,
-        (MouseEvent::Button(_), MouseEvent::Button(_)) => true,
-        _ => false,
-      }
+      && (self.mouse.is_some()
+        && other.mouse.is_some()
+        && match (
+          self.mouse.as_ref().unwrap(),
+          other.mouse.as_ref().unwrap(),
+        ) {
+          (
+            MouseEvent::Motion(MouseMotionEvent { pos, .. }),
+            MouseEvent::Motion(MouseMotionEvent {
+              pos: other_pos,
+              ..
+            }),
+          ) => pos == other_pos,
+          (MouseEvent::Button(_), MouseEvent::Button(_)) => true,
+          _ => false,
+        }
+        || self.mouse.is_none() && other.mouse.is_none())
   }
 }
 
@@ -61,8 +63,10 @@ impl<H: FnMut()> Component for Button<H> {
     self.props = props;
 
     if let Some(MouseEvent::Button(ref button)) = self.props.mouse {
-      if button.pos.is_in(self.bounds) {
-        (self.on_click)();
+      if let Some(MouseButton::Left) = button.button {
+        if button.is_pressed && button.pos.is_in(self.bounds) {
+          (self.on_click)();
+        }
       }
     }
   }
