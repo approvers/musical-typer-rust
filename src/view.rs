@@ -147,13 +147,14 @@ pub fn run_router(score: Scoremap) -> Result<(), ViewError> {
       .expect("Font file is not found");
 
   let video = Video::new(&sdl);
-  let window = WindowBuilder::default()
+  let window = WindowBuilder::builder()
     .title("Musical Typer")
     .width(800)
     .height(600)
     .context_kind(WindowContextKind::OpenGl)
     .allow_high_dpi(true)
-    .build(&video);
+    .build()
+    .new_window(&video);
   window.show();
 
   let renderer = Renderer::new(&window);

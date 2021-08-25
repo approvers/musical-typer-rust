@@ -103,7 +103,7 @@ impl<'canvas> View for GameView<'canvas> {
       if e.is_repeated {
         return;
       }
-      let key_code = e.symbol.key_code.clone();
+      let key_code = e.symbol.key_code;
       if e.is_pressed {
         let key = keycode_to_char(key_code);
         if pressed_key_buf.borrow_mut().insert(key) {
