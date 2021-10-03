@@ -118,9 +118,7 @@ impl<'canvas> View for GameView<'canvas> {
 
     loop {
       if should_quit.get() {
-        player.stop_bgm(500)?;
-        player.play_se(SEKind::GameOver)?;
-        delay(2500);
+        player.stop_bgm(50)?;
         return Ok(ViewRoute::Quit);
       }
       let time = Instant::now();
