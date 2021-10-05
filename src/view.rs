@@ -154,8 +154,6 @@ pub fn run_router(score: Scoremap) -> Result<(), ViewError> {
     .context_kind(WindowContextKind::OpenGl)
     .build()
     .new_window(&video);
-  window.show();
-
   let renderer = Renderer::new(&window);
 
   Router::new(renderer, &video, font, dev).run(score)?;
