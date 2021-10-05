@@ -167,7 +167,7 @@ impl<'view> View for ResultView<'view> {
         }
         retry_button.render(&pen);
 
-        self.font.set_font_size(60);
+        self.font.set_font_size(60).unwrap();
         pen.text(
           &self.font,
           "再挑戦",

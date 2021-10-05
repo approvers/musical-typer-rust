@@ -89,7 +89,7 @@ impl<'font> Component for Finder<'font> {
     const JAPANESE_HEIGHT: u32 = 30;
     let half_x = (client.size.width / 2) as i32;
     let will_input_japanese = sentence.origin();
-    font.set_font_size(JAPANESE_HEIGHT);
+    font.set_font_size(JAPANESE_HEIGHT).unwrap();
     pen.text(
       font,
       will_input_japanese,
@@ -105,7 +105,7 @@ impl<'font> Component for Finder<'font> {
     );
 
     const ROMAN_HEIGHT: u32 = 40;
-    font.set_font_size(ROMAN_HEIGHT);
+    font.set_font_size(ROMAN_HEIGHT).unwrap();
     {
       let TypingStr {
         will_input,
@@ -147,7 +147,7 @@ impl<'font> Component for Finder<'font> {
       );
     }
     const YOMIGANA_HEIGHT: u32 = 80;
-    font.set_font_size(YOMIGANA_HEIGHT);
+    font.set_font_size(YOMIGANA_HEIGHT).unwrap();
     {
       let TypingStr {
         will_input,

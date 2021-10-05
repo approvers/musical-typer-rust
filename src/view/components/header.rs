@@ -58,7 +58,7 @@ impl<'font> Component for Header<'font> {
     let title = &music_info.title;
     let author = &music_info.song_author;
 
-    font.set_font_size(30);
+    font.set_font_size(30).unwrap();
     pen.text(
       font,
       title,
@@ -78,7 +78,7 @@ impl<'font> Component for Header<'font> {
         .pivot(client.top_right().offset(-5, 5)),
     );
 
-    font.set_font_size(15);
+    font.set_font_size(15).unwrap();
     pen.text(
       font,
       author,
@@ -98,7 +98,7 @@ impl<'font> Component for Header<'font> {
         .pivot(client.bottom_right().offset(-5, -35)),
     );
 
-    font.set_font_size(35);
+    font.set_font_size(35).unwrap();
     pen.text(
       font,
       &format!("{:08}", score_point),

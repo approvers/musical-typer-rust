@@ -215,7 +215,7 @@ impl<'font> Component for Keyboard<'font> {
   }
 
   fn render(&self, ctx: &Pen<'_>) {
-    self.font.set_font_size(20);
+    self.font.set_font_size(20).unwrap();
     for cell in &self.cells {
       cell.render(ctx);
     }
