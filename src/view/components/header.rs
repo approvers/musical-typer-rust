@@ -1,8 +1,8 @@
-use rich_sdl2_rust::{color::Rgba, geo::Rect, renderer::pen::Pen};
-use rich_sdl2_ttf_rust::font::{
+use rich_sdl2_rust::ttf::font::{
   pen::{FontRenderExt, FontRenderOptions, TextAlign, TextAlignX},
   Font, RenderMode, StyleExt,
 };
+use rich_sdl2_rust::{color::Rgba, geo::Rect, renderer::pen::Pen};
 use std::rc::Rc;
 
 use crate::{model::exp::scoremap::MusicInfo, view::Component};

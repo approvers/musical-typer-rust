@@ -8,16 +8,16 @@ use crate::model::game::MusicalTyperError;
 use game_view::GameView;
 use player::PlayerError;
 use result_view::ResultView;
-use rich_sdl2_mixer_rust::{
+use rich_sdl2_rust::mixer::{
   device::{MixDevice, MixDeviceBuilder},
   FormatFlag, Mix,
 };
+use rich_sdl2_rust::ttf::{font::Font, Ttf};
 use rich_sdl2_rust::{
   renderer::{pen::Pen, Renderer},
   window::{WindowBuilder, WindowContextKind},
   Sdl, Video,
 };
-use rich_sdl2_ttf_rust::{font::Font, Ttf};
 
 mod components;
 mod game_view;

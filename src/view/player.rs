@@ -1,4 +1,4 @@
-use rich_sdl2_mixer_rust::{
+use rich_sdl2_rust::mixer::{
   chunk::{channel::ChannelGroup, MixChunk},
   device::MixDevice,
   music::MixMusic,

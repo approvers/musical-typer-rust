@@ -1,14 +1,14 @@
-use rich_sdl2_rust::{
-  color::{Rgb, Rgba},
-  geo::{Point, Rect, Size},
-  renderer::pen::Pen,
-};
-use rich_sdl2_ttf_rust::font::{
+use rich_sdl2_rust::ttf::font::{
   pen::{
     FontRenderExt, FontRenderOptions, TextAlign, TextAlignX,
     TextAlignY,
   },
   Font, RenderMode, StyleExt,
+};
+use rich_sdl2_rust::{
+  color::{Rgb, Rgba},
+  geo::{Point, Rect, Size},
+  renderer::pen::Pen,
 };
 use std::rc::Rc;
 

@@ -1,4 +1,5 @@
-use rich_sdl2_mixer_rust::device::MixDevice;
+use rich_sdl2_rust::mixer::device::MixDevice;
+use rich_sdl2_rust::ttf::font::Font;
 use rich_sdl2_rust::{
   delay,
   event::keyboard::key_code::KeyCode,
@@ -6,7 +7,6 @@ use rich_sdl2_rust::{
   renderer::{pen::Pen, Renderer},
   EventBox, Video,
 };
-use rich_sdl2_ttf_rust::font::Font;
 use std::{
   cell::{Cell, RefCell},
   collections::{BTreeSet, VecDeque},
@@ -74,7 +74,7 @@ impl<'canvas> View for GameView<'canvas> {
 
     let client = Rect {
       up_left: Default::default(),
-      size: self.renderer.output_size(),
+      size: self.renderer.output_size().unwrap(),
     };
     let mut whole_view = Whole::new(
       WholeProps {

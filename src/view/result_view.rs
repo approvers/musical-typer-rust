@@ -1,16 +1,16 @@
+use rich_sdl2_rust::ttf::font::{
+  pen::{
+    FontRenderExt, FontRenderOptions, TextAlign, TextAlignX,
+    TextAlignY,
+  },
+  Font, RenderMode, StyleExt,
+};
 use rich_sdl2_rust::{
   color::{Rgb, Rgba},
   delay,
   geo::{Point, Rect, Size},
   renderer::{pen::Pen, Renderer},
   EventBox, Video,
-};
-use rich_sdl2_ttf_rust::font::{
-  pen::{
-    FontRenderExt, FontRenderOptions, TextAlign, TextAlignX,
-    TextAlignY,
-  },
-  Font, RenderMode, StyleExt,
 };
 use std::{
   cell::{Cell, RefCell},
@@ -59,7 +59,7 @@ impl<'view> View for ResultView<'view> {
   fn run(&mut self) -> Result<ViewRoute, super::ViewError> {
     let client = Rect {
       up_left: Default::default(),
-      size: self.renderer.output_size(),
+      size: self.renderer.output_size().unwrap(),
     };
 
     enum Dst {

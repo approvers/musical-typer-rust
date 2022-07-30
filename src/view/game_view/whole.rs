@@ -15,12 +15,12 @@ mod keyboard;
 
 use finder::{Finder, FinderProps};
 use keyboard::{Keyboard, KeyboardProps};
+use rich_sdl2_rust::ttf::font::Font;
 use rich_sdl2_rust::{
   color::Rgb,
   geo::{Point, Rect, Size},
   renderer::pen::Pen,
 };
-use rich_sdl2_ttf_rust::font::Font;
 
 #[derive(PartialEq)]
 pub struct WholeProps {

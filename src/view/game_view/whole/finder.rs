@@ -1,11 +1,11 @@
+use rich_sdl2_rust::ttf::font::{
+  pen::{FontRenderExt, FontRenderOptions, TextAlign, TextAlignX},
+  Font, RenderMode, StyleExt,
+};
 use rich_sdl2_rust::{
   color::Rgb,
   geo::{Point, Rect, Size},
   renderer::pen::Pen,
-};
-use rich_sdl2_ttf_rust::font::{
-  pen::{FontRenderExt, FontRenderOptions, TextAlign, TextAlignX},
-  Font, RenderMode, StyleExt,
 };
 use std::rc::Rc;
 
