@@ -463,9 +463,9 @@ dependencies = [
 
 [[package]]
 name = "rich-sdl2-rust"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfc1222c07792b766fcd131b7884107f5d11510ecdfd5975fada5fc3c6b9906d"
+checksum = "f614833ea2b2b3f2969eec0092ed54546c1deea80a01e1e9d1cdd4183e65c939"
 dependencies = [
  "bitflags",
  "once_cell",
