@@ -101,7 +101,7 @@ impl Default for MusicalTyperConfig {
 pub struct MusicalTyper {
   activity: GameActivity,
   metadata: ScoremapMetadata,
-  accumulated_time: Seconds,
+  current_time: Seconds,
   event_queue: Vec<MusicalTyperEvent>,
   config: MusicalTyperConfig,
 }
@@ -124,7 +124,7 @@ impl MusicalTyper {
     Ok(MusicalTyper {
       activity,
       metadata,
-      accumulated_time: 0.0.into(),
+      current_time: 0.0.into(),
       event_queue,
       config,
     })
@@ -180,17 +180,17 @@ impl MusicalTyper {
   }
 
   #[must_use]
-  pub fn elapse_time(
+  pub fn set_time(
     &mut self,
-    delta_time: Seconds,
+    new_time: Seconds,
   ) -> Vec<MusicalTyperEvent> {
-    self.accumulated_time += delta_time;
+    self.current_time = new_time;
 
     let completed = self.activity.current_sentence().completed();
     let prev_sentence = self.activity.current_sentence();
     let prev_note_id = self.activity.current_note_id();
 
-    self.activity.update_time(self.accumulated_time);
+    self.activity.update_time(self.current_time);
 
     if self.activity.is_game_over() {
       return vec![EndOfScore];
@@ -216,12 +216,12 @@ impl MusicalTyper {
     res
   }
 
-  pub fn accumulated_time(&self) -> Seconds {
-    self.accumulated_time
+  pub fn current_time(&self) -> Seconds {
+    self.current_time
   }
 
   pub fn section_remaining_ratio(&self) -> f64 {
-    self.activity.remaining_ratio(self.accumulated_time)
+    self.activity.remaining_ratio(self.current_time)
   }
 
   pub fn music_info(&self) -> MusicInfo {

@@ -72,7 +72,7 @@ fn op1() -> Result<(), MusicalTyperError> {
   let actual_events: Vec<_> = inputs
     .into_iter()
     .flat_map(|input| match input {
-      Wait(time) => game.elapse_time((*time).into()),
+      Wait(time) => game.set_time((*time).into()),
       KeyPress(key) => game.key_press(key.chars()),
     })
     .collect();

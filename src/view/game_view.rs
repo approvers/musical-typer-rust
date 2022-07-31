@@ -116,12 +116,14 @@ impl<'canvas> View for GameView<'canvas> {
       }
     }));
 
+    let game_start_time = Instant::now();
+
     loop {
       if should_quit.get() {
         player.stop_bgm(50)?;
         return Ok(ViewRoute::Quit);
       }
-      let time = Instant::now();
+      let render_start_time = Instant::now();
       {
         for mt_event in mt_events.iter() {
           use MusicalTyperEvent::*;
@@ -138,7 +140,7 @@ impl<'canvas> View for GameView<'canvas> {
               }
               MusicalTypeResult::Correct => {
                 time_points.push_back(TypeTimePoint(
-                  self.model.accumulated_time(),
+                  self.model.current_time(),
                 ));
                 player.play_se(SEKind::Correct)?;
               }
@@ -160,8 +162,7 @@ impl<'canvas> View for GameView<'canvas> {
             }
             EndOfScore => {
               if ended.is_none() {
-                ended =
-                  Some(self.model.accumulated_time() + 2.0.into());
+                ended = Some(self.model.current_time() + 2.0.into());
               }
             }
           }
@@ -169,7 +170,7 @@ impl<'canvas> View for GameView<'canvas> {
       }
       event.poll();
       {
-        let expire_limit = self.model.accumulated_time() - 5.0.into();
+        let expire_limit = self.model.current_time() - 5.0.into();
         while let Some(front) = time_points.front() {
           if front.0 < expire_limit {
             time_points.pop_front();
@@ -204,18 +205,18 @@ impl<'canvas> View for GameView<'canvas> {
       mt_events =
         self.model.key_press(typed_key_buf_cloned.into_iter());
 
-      let draw_time = time.elapsed().as_secs_f64();
+      let draw_time = render_start_time.elapsed().as_secs_f64();
 
       delay((1e3 / 60.0 - draw_time * 1e3).max(0.0) as u32);
 
-      let elapsed = time.elapsed().as_secs_f64();
+      let new_time = game_start_time.elapsed().as_secs_f64();
 
-      mt_events.append(&mut self.model.elapse_time(elapsed.into()));
+      mt_events.append(&mut self.model.set_time(new_time.into()));
       print!("\rFPS: {}     ", 1.0 / draw_time);
 
       if ended
         .as_ref()
-        .map_or(false, |ended| ended < &self.model.accumulated_time())
+        .map_or(false, |ended| ended < &self.model.current_time())
       {
         return Ok(ViewRoute::ResultView(
           self.model.activity().score().clone(),
