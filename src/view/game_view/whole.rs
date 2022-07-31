@@ -5,7 +5,9 @@ use crate::{
     game_activity::GameScore, scoremap::MusicInfo, sentence::Sentence,
   },
   view::{
-    components::{Header, HeaderProps, Stats, StatsProps},
+    components::{
+      Header, HeaderProps, SentenceResult, Stats, StatsProps,
+    },
     Component,
   },
 };
@@ -26,6 +28,7 @@ use rich_sdl2_rust::{
 pub struct WholeProps {
   pub pressed_keys: Vec<char>,
   pub sentence: Sentence,
+  pub sentence_result: Option<SentenceResult>,
   pub music_info: MusicInfo,
   pub type_per_second: f64,
   pub score: GameScore,
@@ -97,6 +100,7 @@ impl<'font> Whole<'font> {
       HeaderProps {
         music_info: props.music_info.clone(),
         score_point: props.score.score_point,
+        sentence_result: None,
       },
       Rc::clone(&font),
       header_dim,
@@ -152,6 +156,12 @@ impl<'font> Component for Whole<'font> {
     self.finder.update(FinderProps {
       sentence: props.sentence.clone(),
       remaining_ratio: props.section_remaining_ratio,
+    });
+
+    self.header.update(HeaderProps {
+      music_info: props.music_info,
+      score_point: props.score.score_point,
+      sentence_result: props.sentence_result,
     });
 
     self.stats.update(StatsProps {

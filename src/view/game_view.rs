@@ -27,7 +27,7 @@ use crate::{
       MusicalTyperEvent,
     },
   },
-  view::Component,
+  view::{components::SentenceResult, Component},
 };
 
 mod whole;
@@ -84,6 +84,7 @@ impl<'canvas> View for GameView<'canvas> {
           .cloned()
           .collect(),
         sentence: sentence.clone(),
+        sentence_result: None,
         music_info: self.model.music_info(),
         type_per_second: 0.0,
         score: self.model.activity().score().clone(),
@@ -124,6 +125,7 @@ impl<'canvas> View for GameView<'canvas> {
         return Ok(ViewRoute::Quit);
       }
       let render_start_time = Instant::now();
+      let mut sentence_result = None;
       {
         for mt_event in mt_events.iter() {
           use MusicalTyperEvent::*;
@@ -150,11 +152,11 @@ impl<'canvas> View for GameView<'canvas> {
             },
             MissedSentence(_sentence) => {
               player.play_se(SEKind::MissedSentence)?;
-              // TODO: Queue a missed animation
+              sentence_result = Some(SentenceResult::Missed);
             }
             CompletedSentence(_sentence) => {
               player.play_se(SEKind::PerfectSentence)?;
-              // TODO: Queue a completed animation
+              sentence_result = Some(SentenceResult::Completed);
             }
             DidPerfectSection => {
               player.play_se(SEKind::PerfectSection)?;
@@ -167,7 +169,7 @@ impl<'canvas> View for GameView<'canvas> {
             }
           }
         }
-      }
+      };
       event.poll();
       {
         let expire_limit = self.model.current_time() - 5.0.into();
@@ -190,6 +192,7 @@ impl<'canvas> View for GameView<'canvas> {
             .cloned()
             .collect(),
           sentence: sentence.clone(),
+          sentence_result,
           music_info: self.model.music_info(),
           type_per_second,
           score: self.model.activity().score().clone(),

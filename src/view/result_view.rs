@@ -98,6 +98,7 @@ impl<'view> View for ResultView<'view> {
       HeaderProps {
         music_info: self.music_info.clone(),
         score_point: self.score.score_point,
+        sentence_result: None,
       },
       Rc::clone(&self.font),
       header_dim,
