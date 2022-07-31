@@ -63,23 +63,22 @@ impl Duration {
 
 #[test]
 fn duration() -> DurationResult<()> {
-  assert!(Duration::new(1.0.into(), 0.0.into()).is_err());
-  assert!(Duration::new(0.0.into(), 0.0.into()).is_err());
-  assert!(Duration::new(0.0.into(), 1.0.into()).is_ok());
+  assert!(Duration::new(1.0, 0.0).is_err());
+  assert!(Duration::new(0.0, 0.0).is_err());
+  assert!(Duration::new(0.0, 1.0).is_ok());
 
-  let duration = Duration::new(0.0.into(), 1.3.into())?;
+  let duration = Duration::new(0.0, 1.3)?;
   assert_eq!(0.0, duration.from);
   assert_eq!(1.3, duration.to);
   assert!(duration.includes(&0.7.into()));
   assert!(!duration.includes(&1.3.into()));
   assert!(!duration.includes(&Seconds::new(-0.1)));
 
-  let duration =
-    Duration::new(2.5.into(), 3.1.into())?.concat(&duration);
+  let duration = Duration::new(2.5, 3.1)?.concat(&duration);
   assert_eq!(0.0, duration.from);
   assert_eq!(3.1, duration.to);
 
-  let duration = duration.following(2.4.into());
+  let duration = duration.following(2.4);
   assert_eq!(3.1, duration.from);
   assert_eq!(5.5, duration.to);
   Ok(())

@@ -70,7 +70,7 @@ fn op1() -> Result<(), MusicalTyperError> {
     MusicalTyper::new(test_score, MusicalTyperConfig::default())?;
 
   let actual_events: Vec<_> = inputs
-    .into_iter()
+    .iter()
     .flat_map(|input| match input {
       Wait(time) => game.set_time((*time).into()),
       KeyPress(key) => game.key_press(key.chars()),

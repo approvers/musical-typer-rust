@@ -8,8 +8,8 @@ pub struct RomanChar {
 }
 
 impl Debug for RomanChar {
-  fn fmt(&self, mut f: &mut Formatter<'_>) -> Result {
-    write!(&mut f, "{}({})", self.determined_style(), self.inputted)
+  fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    write!(f, "{}({})", self.determined_style(), self.inputted)
   }
 }
 

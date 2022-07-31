@@ -15,8 +15,8 @@ pub struct Sentence {
 }
 
 impl Debug for Sentence {
-  fn fmt(&self, mut f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(&mut f, "{} <-> {:?}", self.origin, self.hiragana)
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{} <-> {:?}", self.origin, self.hiragana)
   }
 }
 

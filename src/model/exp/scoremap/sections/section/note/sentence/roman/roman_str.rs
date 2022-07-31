@@ -10,9 +10,9 @@ pub struct RomanStr {
 }
 
 impl Debug for RomanStr {
-  fn fmt(&self, mut f: &mut Formatter<'_>) -> std::fmt::Result {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
-      &mut f,
+      f,
       "{:?}",
       self
         .chars

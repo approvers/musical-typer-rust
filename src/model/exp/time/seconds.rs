@@ -92,7 +92,7 @@ impl PartialOrd for Seconds {
 }
 
 impl Display for Seconds {
-  fn fmt(&self, mut f: &mut Formatter<'_>) -> Result {
-    write!(&mut f, "{:.2}", self.0)
+  fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    write!(f, "{:.2}", self.0)
   }
 }
