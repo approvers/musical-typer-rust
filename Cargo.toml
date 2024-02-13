@@ -10,4 +10,4 @@ edition = "2021"
 regex = "1.7.1"
 rand = "0.8.3"
 readonly = "0.2.0"
-rich-sdl2-rust = { version = "0.12.1", features = ["ttf", "mixer"] }
+rich-sdl2-rust = { version = "0.13.2", features = ["ttf", "mixer"] }
